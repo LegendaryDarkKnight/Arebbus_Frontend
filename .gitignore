@@ -43,3 +43,11 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# vscode
+.vscode
+demo
+
+#some text file for my use
+gemini.txt 
+claude.txt
