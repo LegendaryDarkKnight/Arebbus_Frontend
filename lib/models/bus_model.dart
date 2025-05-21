@@ -1,5 +1,16 @@
 // lib/models/bus_model.dart
-import 'package:google_maps_flutter/google_maps_flutter.dart'; // For LatLng
+
+class Location{
+  double latitude;
+  double longitude;
+  String address;
+
+  Location({
+    required this.latitude,
+    required this.longitude,
+    required this.address
+  });
+}
 
 class Bus {
   final String id;
@@ -7,8 +18,8 @@ class Bus {
   final String routeName; // e.g., "Rayerbag to Bakshibazar"
   final int totalSeats;
   int availableSeats; // Can change
-  final String currentStatus; // e.g., "Running", "Delayed"
-  final LatLng? currentLocation; // Mock location
+  String currentStatus; // e.g., "Running", "Delayed"
+  Location currentLocation; // Mock location
   final List<String> stoppages;
   final Map<String, double> fareInfo; // Stoppage to fare
   String userActionStatus; // "none", "waiting", "on_bus"
@@ -20,7 +31,7 @@ class Bus {
     required this.totalSeats,
     required this.availableSeats,
     this.currentStatus = "Running",
-    this.currentLocation,
+    required this.currentLocation,
     required this.stoppages,
     required this.fareInfo,
     this.userActionStatus = "none",

@@ -1,4 +1,3 @@
-// lib/models/post_model.dart
 class Post {
   final String id;
   final String userId;

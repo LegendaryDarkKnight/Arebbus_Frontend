@@ -3,7 +3,6 @@ import 'package:arebbus/models/bus_model.dart';
 import 'package:arebbus/models/post_model.dart';
 import 'package:arebbus/models/user_model.dart';
 import 'package:arebbus/models/addon_model.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart'; // For LatLng
 
 class MockDataService {
   static final ArebbuUser currentUser = ArebbuUser(
@@ -26,10 +25,11 @@ class MockDataService {
         totalSeats: 60,
         availableSeats: 25,
         currentStatus: 'Running on time',
-        currentLocation: const LatLng(
-          23.7263,
-          90.3929,
-        ), // Mock: Dhaka University area
+        currentLocation:  Location(
+          latitude:  23.7263,
+          longitude:  90.3929,
+          address: "Dhaka University area")
+          ,
         stoppages: [
           'Rayerbag',
           'Janapath',
@@ -52,7 +52,10 @@ class MockDataService {
         totalSeats: 50,
         availableSeats: 10,
         currentStatus: 'Slightly Delayed',
-        currentLocation: const LatLng(23.7530, 90.3765), // Mock: Farmgate area
+        currentLocation: Location(
+          latitude:  23.7530, 
+          longitude:  90.3765,
+          address: "Farmgate area"),
         stoppages: [
           'Mirpur 10',
           'Kazipara',
@@ -77,7 +80,10 @@ class MockDataService {
         totalSeats: 55,
         availableSeats: 40,
         currentStatus: 'Running',
-        currentLocation: const LatLng(23.7776, 90.3945), // Mock: Mohakhali area
+        currentLocation: Location(
+          latitude:  23.7776, 
+          longitude:  90.3945,
+          address: "Mohakhali area"), 
         stoppages: [
           'Gazipur Chowrasta',
           'Airport',
@@ -102,7 +108,10 @@ class MockDataService {
         totalSeats: 40,
         availableSeats: 15,
         currentStatus: 'Scheduled',
-        currentLocation: const LatLng(23.7099, 90.4071), // Mock: Near Signboard
+        currentLocation: Location(
+          latitude:  23.7099, 
+          longitude:  90.4071,
+          address: "Near Signboard"),
         stoppages: [
           'Signboard',
           'Rayerbag',

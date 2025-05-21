@@ -9,7 +9,8 @@ class AddonScreen extends StatefulWidget {
   State<StatefulWidget> createState() => _AddonScreenState();
 }
 
-class _AddonScreenState extends State<AddonScreen> with SingleTickerProviderStateMixin {
+class _AddonScreenState extends State<AddonScreen>
+    with SingleTickerProviderStateMixin {
   late TabController _tabController;
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
@@ -46,14 +47,15 @@ class _AddonScreenState extends State<AddonScreen> with SingleTickerProviderStat
               decoration: InputDecoration(
                 hintText: 'Search add-ons...',
                 prefixIcon: const Icon(Icons.search),
-                suffixIcon: _searchQuery.isNotEmpty
-                    ? IconButton(
-                        icon: const Icon(Icons.clear),
-                        onPressed: () {
-                          _searchController.clear();
-                        },
-                      )
-                    : null,
+                suffixIcon:
+                    _searchQuery.isNotEmpty
+                        ? IconButton(
+                          icon: const Icon(Icons.clear),
+                          onPressed: () {
+                            _searchController.clear();
+                          },
+                        )
+                        : null,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12.0),
                   borderSide: BorderSide.none,
@@ -63,7 +65,7 @@ class _AddonScreenState extends State<AddonScreen> with SingleTickerProviderStat
               ),
             ),
           ),
-          
+
           // Tab bar for filters
           TabBar(
             controller: _tabController,
@@ -78,7 +80,7 @@ class _AddonScreenState extends State<AddonScreen> with SingleTickerProviderStat
               Tab(text: 'Category'),
             ],
           ),
-          
+
           // Tab bar views
           Expanded(
             child: TabBarView(
@@ -93,12 +95,23 @@ class _AddonScreenState extends State<AddonScreen> with SingleTickerProviderStat
           ),
         ],
       ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Add new bus/route (addon) - Mock')),
+          );
+        },
+        label: const Text('Add an Addon'),
+        icon: const Icon(Icons.add_road),
+        backgroundColor: Theme.of(context).colorScheme.secondary,
+        foregroundColor: Theme.of(context).colorScheme.onSecondary,
+      ),
     );
   }
 
   Widget _buildAddonList({required String filterType}) {
     List<Addon> filteredAddons = _getFilteredAddons(filterType);
-    
+
     if (filteredAddons.isEmpty) {
       return Center(
         child: Column(
@@ -108,16 +121,13 @@ class _AddonScreenState extends State<AddonScreen> with SingleTickerProviderStat
             const SizedBox(height: 16),
             Text(
               'No add-ons found',
-              style: TextStyle(
-                fontSize: 18,
-                color: Colors.grey.shade700,
-              ),
+              style: TextStyle(fontSize: 18, color: Colors.grey.shade700),
             ),
           ],
         ),
       );
     }
-    
+
     return ListView.builder(
       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
       itemCount: filteredAddons.length,
@@ -138,7 +148,10 @@ class _AddonScreenState extends State<AddonScreen> with SingleTickerProviderStat
                   children: [
                     CircleAvatar(
                       backgroundColor: _getCategoryColor(addon.category),
-                      child: Text(addon.name[0], style: const TextStyle(color: Colors.white)),
+                      child: Text(
+                        addon.name[0],
+                        style: const TextStyle(color: Colors.white),
+                      ),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
@@ -166,32 +179,32 @@ class _AddonScreenState extends State<AddonScreen> with SingleTickerProviderStat
                     addon.isInstalled
                         ? const Icon(Icons.check_circle, color: Colors.green)
                         : OutlinedButton(
-                            onPressed: () {
-                              // Handle install action
-                              setState(() {
-                                // In a real app, we would call a service to install the addon
-                                // For now, let's just update the UI
-                                filteredAddons[index] = Addon(
-                                  id: addon.id,
-                                  name: addon.name,
-                                  description: addon.description,
-                                  category: addon.category,
-                                  author: addon.author,
-                                  installs: addon.installs + 1,
-                                  rating: addon.rating,
-                                  isInstalled: true,
-                                  createdAt: addon.createdAt,
-                                  updatedAt: addon.updatedAt,
-                                );
-                              });
-                            },
-                            style: OutlinedButton.styleFrom(
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(20.0),
-                              ),
+                          onPressed: () {
+                            // Handle install action
+                            setState(() {
+                              // In a real app, we would call a service to install the addon
+                              // For now, let's just update the UI
+                              filteredAddons[index] = Addon(
+                                id: addon.id,
+                                name: addon.name,
+                                description: addon.description,
+                                category: addon.category,
+                                author: addon.author,
+                                installs: addon.installs + 1,
+                                rating: addon.rating,
+                                isInstalled: true,
+                                createdAt: addon.createdAt,
+                                updatedAt: addon.updatedAt,
+                              );
+                            });
+                          },
+                          style: OutlinedButton.styleFrom(
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(20.0),
                             ),
-                            child: const Text('Install'),
                           ),
+                          child: const Text('Install'),
+                        ),
                   ],
                 ),
                 const SizedBox(height: 8),
@@ -209,7 +222,11 @@ class _AddonScreenState extends State<AddonScreen> with SingleTickerProviderStat
                     ),
                     Row(
                       children: [
-                        const Icon(Icons.download, size: 16, color: Colors.blue),
+                        const Icon(
+                          Icons.download,
+                          size: 16,
+                          color: Colors.blue,
+                        ),
                         const SizedBox(width: 4),
                         Text('${addon.installs} installs'),
                       ],
@@ -234,34 +251,49 @@ class _AddonScreenState extends State<AddonScreen> with SingleTickerProviderStat
   List<Addon> _getFilteredAddons(String filterType) {
     // Filter based on selected tab
     List<Addon> filteredAddons = [];
-    
+
     switch (filterType) {
       case 'All':
         filteredAddons = _allAddons;
         break;
       case 'Installed':
-        filteredAddons = _allAddons.where((addon) => addon.isInstalled).toList();
+        filteredAddons =
+            _allAddons.where((addon) => addon.isInstalled).toList();
         break;
       case 'My Add-ons':
         // Filter addons created by the current user
-        filteredAddons = _allAddons.where((addon) => 
-            addon.author.id == MockDataService.currentUser.id).toList();
+        filteredAddons =
+            _allAddons
+                .where(
+                  (addon) => addon.author.id == MockDataService.currentUser.id,
+                )
+                .toList();
         break;
       case 'Category':
         // Show all categories or we could further filter by a specific category
         filteredAddons = _allAddons;
         break;
     }
-    
+
     // Apply search filter if search query exists
     if (_searchQuery.isNotEmpty) {
-      filteredAddons = filteredAddons.where((addon) => 
-          addon.name.toLowerCase().contains(_searchQuery.toLowerCase()) ||
-          addon.description.toLowerCase().contains(_searchQuery.toLowerCase()) ||
-          addon.category.toLowerCase().contains(_searchQuery.toLowerCase())
-      ).toList();
+      filteredAddons =
+          filteredAddons
+              .where(
+                (addon) =>
+                    addon.name.toLowerCase().contains(
+                      _searchQuery.toLowerCase(),
+                    ) ||
+                    addon.description.toLowerCase().contains(
+                      _searchQuery.toLowerCase(),
+                    ) ||
+                    addon.category.toLowerCase().contains(
+                      _searchQuery.toLowerCase(),
+                    ),
+              )
+              .toList();
     }
-    
+
     return filteredAddons;
   }
 
@@ -282,7 +314,7 @@ class _AddonScreenState extends State<AddonScreen> with SingleTickerProviderStat
 
   String _getTimeAgo(DateTime dateTime) {
     final difference = DateTime.now().difference(dateTime);
-    
+
     if (difference.inDays > 30) {
       return '${(difference.inDays / 30).floor()} months ago';
     } else if (difference.inDays > 0) {

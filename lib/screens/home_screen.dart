@@ -91,30 +91,6 @@ class _HomeScreenState extends State<HomeScreen> {
         onTap: _onItemTapped,
         type: BottomNavigationBarType.fixed, 
       ),
-      floatingActionButton: _selectedIndex == 0 
-          ? FloatingActionButton.extended(
-              onPressed: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Post')),
-                );
-              },
-              label: const Text('Add Post'),
-              icon: const Icon(Icons.post_add),
-              backgroundColor: Theme.of(context).colorScheme.secondary,
-              foregroundColor: Theme.of(context).colorScheme.onSecondary,
-            )
-          : _selectedIndex == 3 
-          ? FloatingActionButton.extended(
-              onPressed: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Add new bus/route (addon) - Mock')),
-                );
-              },
-              label: const Text('Add an Addon'),
-              icon: const Icon(Icons.add_road),
-              backgroundColor: Theme.of(context).colorScheme.secondary,
-              foregroundColor: Theme.of(context).colorScheme.onSecondary,
-          ): null,
     );
   }
 }
