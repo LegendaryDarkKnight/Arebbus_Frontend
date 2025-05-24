@@ -52,3 +52,5 @@ demo
 gemini.txt 
 claude.txt
 ddl.sql
+*.ps1
+env.json
