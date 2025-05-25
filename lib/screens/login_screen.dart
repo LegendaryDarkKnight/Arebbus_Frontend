@@ -1,7 +1,6 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:cookie_jar/cookie_jar.dart';
 import 'package:dio/dio.dart';
-import 'package:dio_cookie_manager/dio_cookie_manager.dart';
 import 'register_screen.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -19,7 +18,6 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _obscurePassword = true;
   
   late Dio dio;
-  late CookieJar cookieJar;
 
   @override
   void initState() {
@@ -29,13 +27,22 @@ class _LoginScreenState extends State<LoginScreen> {
 
   void _initializeDio() {
     dio = Dio();
-    cookieJar = CookieJar();
-    dio.interceptors.add(CookieManager(cookieJar));
+    
     // Set base options
     const String baseUrl = String.fromEnvironment("BASE_URL", defaultValue: "http://localhost:6996");
     dio.options.baseUrl = baseUrl;
     dio.options.connectTimeout = const Duration(seconds: 5);
     dio.options.receiveTimeout = const Duration(seconds: 3);
+    
+    // For web, ensure credentials are included in requests to handle cookies
+    if (kIsWeb) {
+      dio.options.extra['withCredentials'] = true;
+    }
+    
+    // Note: Cookie management is handled differently:
+    // - On web: Browser automatically handles cookies
+    // - On mobile/desktop: You can add cookie_jar manually if needed
+    debugPrint('Dio initialized for ${kIsWeb ? 'web' : 'mobile/desktop'} platform');
   }
 
   Future<void> _login() async {
@@ -56,6 +63,8 @@ class _LoginScreenState extends State<LoginScreen> {
           headers: {
             'Content-Type': 'application/json',
           },
+          // For web, ensure credentials are sent with requests
+          extra: kIsWeb ? {'withCredentials': true} : null,
         ),
       );
 

@@ -1,7 +1,6 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
-import 'package:cookie_jar/cookie_jar.dart';
-import 'package:dio_cookie_manager/dio_cookie_manager.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -12,8 +11,7 @@ class RegisterScreen extends StatefulWidget {
 
 class _RegisterScreenState extends State<RegisterScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _userNameController = TextEditingController();
-  final _fullNameController = TextEditingController();
+  final _nameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
@@ -22,7 +20,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
   bool _obscureConfirmPassword = true;
   
   late Dio dio;
-  late CookieJar cookieJar;
 
   @override
   void initState() {
@@ -32,14 +29,22 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   void _initializeDio() {
     dio = Dio();
-    cookieJar = CookieJar();
-    dio.interceptors.add(CookieManager(cookieJar));
     
     // Set base options
     const String baseUrl = String.fromEnvironment("BASE_URL", defaultValue: "http://localhost:6996");
-    dio.options.baseUrl =  baseUrl;//String.fromEnvironment(baseUrl, defaultValue: "http://localhost:6996");
+    dio.options.baseUrl = baseUrl;
     dio.options.connectTimeout = const Duration(seconds: 5);
     dio.options.receiveTimeout = const Duration(seconds: 3);
+    
+    // For web, ensure credentials are included in requests to handle cookies
+    if (kIsWeb) {
+      dio.options.extra['withCredentials'] = true;
+    }
+    
+    // Note: Cookie management is handled differently:
+    // - On web: Browser automatically handles cookies
+    // - On mobile/desktop: You can add cookie_jar manually if needed
+    debugPrint('Dio initialized for ${kIsWeb ? 'web' : 'mobile/desktop'} platform');
   }
 
   Future<void> _register() async {
@@ -53,8 +58,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       final response = await dio.post(
         '/auth/register',
         data: {
-          'user_name': _userNameController.text.trim(),
-          'full_name': _fullNameController.text.trim(),
+          'name': _nameController.text.trim(),
           'email': _emailController.text.trim(),
           'password': _passwordController.text,
         },
@@ -62,6 +66,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
           headers: {
             'Content-Type': 'application/json',
           },
+          // For web, ensure credentials are sent with requests
+          extra: kIsWeb ? {'withCredentials': true} : null,
         ),
       );
 
@@ -161,8 +167,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   @override
   void dispose() {
-    _userNameController.dispose();
-    _fullNameController.dispose();
+    _nameController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
@@ -240,45 +245,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     key: _formKey,
                     child: Column(
                       children: [
-                        // Username Field
-                        TextFormField(
-                          controller: _userNameController,
-                          decoration: InputDecoration(
-                            labelText: 'Username',
-                            prefixIcon: const Icon(Icons.person_outlined),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(8),
-                              borderSide: BorderSide(color: Colors.grey.shade300),
-                            ),
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(8),
-                              borderSide: BorderSide(color: Colors.green.shade600),
-                            ),
-                          ),
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'Please enter a username';
-                            }
-                            if (value.length < 3) {
-                              return 'Username must be at least 3 characters';
-                            }
-                            if (!RegExp(r'^[a-zA-Z0-9_]+$').hasMatch(value)) {
-                              return 'Username can only contain letters, numbers, and underscores';
-                            }
-                            return null;
-                          },
-                        ),
-                        const SizedBox(height: 16),
-
                         // Full Name Field
                         TextFormField(
-                          controller: _fullNameController,
+                          controller: _nameController,
                           decoration: InputDecoration(
                             labelText: 'Full Name',
-                            prefixIcon: const Icon(Icons.badge_outlined),
+                            prefixIcon: const Icon(Icons.person_outlined),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(8),
                             ),
