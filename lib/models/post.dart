@@ -7,6 +7,7 @@ class Post {
   final int authorId;
   final String content;
   final int numUpvote;
+  final DateTime timestamp; // Added timestamp for sorting
   final User? author;
   final List<Tag>? tags;
   final List<Comment>? comments;
@@ -16,6 +17,7 @@ class Post {
     required this.authorId,
     required this.content,
     required this.numUpvote,
+    required this.timestamp,
     this.author,
     this.tags,
     this.comments,
@@ -27,6 +29,9 @@ class Post {
       authorId: json['author_id'] ?? json['authorId'],
       content: json['content'] ?? '',
       numUpvote: json['num_upvote'] ?? json['numUpvote'] ?? 0,
+      timestamp: json['timestamp'] != null 
+          ? DateTime.parse(json['timestamp']) 
+          : DateTime.now(),
       author: json['author'] != null ? User.fromJson(json['author']) : null,
       tags: json['tags'] != null 
           ? (json['tags'] as List).map((tag) => Tag.fromJson(tag)).toList()
@@ -43,6 +48,7 @@ class Post {
       'author_id': authorId,
       'content': content,
       'num_upvote': numUpvote,
+      'timestamp': timestamp.toIso8601String(),
       'author': author?.toJson(),
       'tags': tags?.map((tag) => tag.toJson()).toList(),
       'comments': comments?.map((comment) => comment.toJson()).toList(),
@@ -54,6 +60,7 @@ class Post {
     int? authorId,
     String? content,
     int? numUpvote,
+    DateTime? timestamp,
     User? author,
     List<Tag>? tags,
     List<Comment>? comments,
@@ -63,6 +70,7 @@ class Post {
       authorId: authorId ?? this.authorId,
       content: content ?? this.content,
       numUpvote: numUpvote ?? this.numUpvote,
+      timestamp: timestamp ?? this.timestamp,
       author: author ?? this.author,
       tags: tags ?? this.tags,
       comments: comments ?? this.comments,
@@ -71,7 +79,7 @@ class Post {
 
   @override
   String toString() {
-    return 'Post{id: $id, content: ${content.length > 50 ? content.substring(0, 50) + '...' : content}}';
+    return 'Post{id: $id, content: ${content.length > 50 ? '${content.substring(0, 50)}...' : content}}';
   }
 
   @override

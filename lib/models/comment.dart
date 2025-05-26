@@ -8,7 +8,8 @@ class Comment {
   final int postId;
   final int numUpvote;
   final User? author;
-  final Post? post;
+  final Post? post; // Be cautious with circular dependencies if Post also holds List<Comment>
+  final DateTime timestamp;
 
   Comment({
     this.id,
@@ -16,6 +17,7 @@ class Comment {
     required this.authorId,
     required this.postId,
     required this.numUpvote,
+    required this.timestamp, // Made timestamp a required named parameter
     this.author,
     this.post,
   });
@@ -29,6 +31,10 @@ class Comment {
       numUpvote: json['num_upvote'] ?? json['numUpvote'] ?? 0,
       author: json['author'] != null ? User.fromJson(json['author']) : null,
       post: json['post'] != null ? Post.fromJson(json['post']) : null,
+      // Ensure 'timestamp' is correctly parsed. Assuming it's an ISO 8601 string.
+      timestamp: json['timestamp'] != null
+          ? DateTime.parse(json['timestamp'])
+          : DateTime.now(), // Fallback, ideally timestamp should always be present
     );
   }
 
@@ -40,7 +46,8 @@ class Comment {
       'post_id': postId,
       'num_upvote': numUpvote,
       'author': author?.toJson(),
-      'post': post?.toJson(),
+      'post': post?.toJson(), // Be cautious with circular serialization
+      'timestamp': timestamp.toIso8601String(), // Added timestamp
     };
   }
 
@@ -52,6 +59,7 @@ class Comment {
     int? numUpvote,
     User? author,
     Post? post,
+    DateTime? timestamp, // Added timestamp
   }) {
     return Comment(
       id: id ?? this.id,
@@ -61,20 +69,21 @@ class Comment {
       numUpvote: numUpvote ?? this.numUpvote,
       author: author ?? this.author,
       post: post ?? this.post,
+      timestamp: timestamp ?? this.timestamp, // Added timestamp
     );
   }
 
   @override
   String toString() {
-    return 'Comment{id: $id, content: ${content.length > 30 ? content.substring(0, 30) + '...' : content}}';
+    return 'Comment{id: $id, content: ${content.length > 30 ? '${content.substring(0, 30)}...' : content}, timestamp: $timestamp}';
   }
 
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
-    return other is Comment && other.id == id;
+    return other is Comment && other.id == id && other.timestamp == timestamp; // Consider timestamp for equality if ID can be null for new comments
   }
 
   @override
-  int get hashCode => id.hashCode;
+  int get hashCode => id.hashCode ^ timestamp.hashCode; // Combine hashCodes
 }

@@ -49,6 +49,7 @@ app.*.map.json
 demo
 backups
 important_commands
+.firebase
 #some text file for my use
 gemini.txt 
 claude.txt
