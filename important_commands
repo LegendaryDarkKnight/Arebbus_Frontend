@@ -1,2 +1,0 @@
-flutter run --web-port=3000
-flutter run --dart-define=BASE_URL=http://localhost:6996
