@@ -10,7 +10,7 @@ class MockDataService {
     name: 'Imtiaz',
     email: 'imtiaz@buet.ac.bd',
     profileImageUrl:
-        'https://placehold.co/100x100/00ACC1/FFFFFF?text=I', // Teal background, white text
+        'https://picsum.photos/200', // Teal background, white text
     reputationPoints: 150,
     subscribedRoutes: ['Rayerbag-Bakshibazar'],
     contributedAddons: ['BUET-Signboard'],
@@ -137,7 +137,7 @@ class MockDataService {
         userId: 'user002',
         userName: 'Traffic Hero',
         userProfileImageUrl:
-            'https://placehold.co/50x50/FF7043/FFFFFF?text=TH', // Deep Orange background
+            'https://picsum.photos/200', // Deep Orange background
         content:
             'Heavy congestion on the Mayor Hanif Flyover near Janapath turning. Avoid if possible!',
         timestamp: DateTime.now().subtract(const Duration(minutes: 30)),
@@ -151,7 +151,7 @@ class MockDataService {
         userId: 'user003',
         userName: 'City Commuter',
         userProfileImageUrl:
-            'https://placehold.co/50x50/4CAF50/FFFFFF?text=CC', // Green background
+            'https://picsum.photos/200', // Green background
         content:
             'Nilachol bus (Gazipur to Azimpur) is running late by about 20 mins due to an issue at Mohakhali.',
         timestamp: DateTime.now().subtract(const Duration(hours: 1)),
@@ -177,7 +177,7 @@ class MockDataService {
         userId: 'user004',
         userName: 'Daily Rider',
         userProfileImageUrl:
-            'https://placehold.co/50x50/AB47BC/FFFFFF?text=DR', // Purple background
+            'https://picsum.photos/200', // Purple background
         content:
             'PSA: Alternative route via Gulistan is much clearer this morning if you are heading towards Old Dhaka from Rayerbag.',
         timestamp: DateTime.now().subtract(const Duration(minutes: 45)),
