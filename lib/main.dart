@@ -1,12 +1,19 @@
 import 'package:arebbus/screens/login_screen.dart';
 import 'package:arebbus/screens/register_screen.dart';
+import 'package:arebbus/service/auth_service.dart';
 import 'package:flutter/material.dart';
 import 'package:arebbus/screens/home_screen.dart';
+import 'package:provider/provider.dart';
 
 void main(){
   const baseUrl = String.fromEnvironment("BASE_URL", defaultValue: "http://localhost:6996");
   debugPrint("Base URL: $baseUrl");
-  runApp(Arebbus());
+  runApp(
+    ChangeNotifierProvider(
+      create: (_) => AuthService(), // Make sure AuthService extends ChangeNotifier
+      child: const Arebbus(),
+    ),
+  );
 }
 
 class Arebbus extends StatelessWidget{

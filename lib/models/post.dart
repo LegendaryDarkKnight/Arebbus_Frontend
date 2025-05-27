@@ -4,7 +4,7 @@ import 'user.dart';
 
 class Post {
   final int? id;
-  final int authorId;
+  final int? authorId;
   final String content;
   final int numUpvote;
   final DateTime timestamp; // Added timestamp for sorting
@@ -14,7 +14,7 @@ class Post {
 
   Post({
     this.id,
-    required this.authorId,
+    this.authorId,
     required this.content,
     required this.numUpvote,
     required this.timestamp,

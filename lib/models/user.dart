@@ -1,11 +1,11 @@
 class User {
   final int? id;
   final String name;
-  final String email;
+  final String? email;
   final String? password; // Don't include in fromJson for security
   final String image;
-  final int reputation;
-  final bool valid;
+  final int? reputation;
+  final bool? valid;
   final double? latitude;
   final double? longitude;
   final DateTime? createdAt;
@@ -14,11 +14,11 @@ class User {
   User({
     this.id,
     required this.name,
-    required this.email,
+    this.email,
     this.password,
     required this.image,
-    required this.reputation,
-    required this.valid,
+    this.reputation,
+    this.valid,
     this.latitude,
     this.longitude,
     this.createdAt,

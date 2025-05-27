@@ -1,5 +1,4 @@
 import 'package:arebbus/models/comment.dart'; // Adjust import path
-import 'package:arebbus/models/user.dart'; // Adjust import path for User (if comment.author is used)
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 

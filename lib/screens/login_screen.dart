@@ -1,6 +1,8 @@
+import 'package:arebbus/service/auth_service.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
+import 'package:provider/provider.dart';
 import 'register_screen.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -16,7 +18,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final _passwordController = TextEditingController();
   bool _isLoading = false;
   bool _obscurePassword = true;
-  
+
   late Dio dio;
 
   @override
@@ -27,22 +29,21 @@ class _LoginScreenState extends State<LoginScreen> {
 
   void _initializeDio() {
     dio = Dio();
-    
-    // Set base options
-    const String baseUrl = String.fromEnvironment("BASE_URL", defaultValue: "http://localhost:6996");
+
+    const String baseUrl = String.fromEnvironment(
+      "BASE_URL",
+      defaultValue: "http://localhost:6996",
+    );
     dio.options.baseUrl = baseUrl;
     dio.options.connectTimeout = const Duration(seconds: 5);
     dio.options.receiveTimeout = const Duration(seconds: 3);
-    
-    // For web, ensure credentials are included in requests to handle cookies
+
     if (kIsWeb) {
       dio.options.extra['withCredentials'] = true;
     }
-    
-    // Note: Cookie management is handled differently:
-    // - On web: Browser automatically handles cookies
-    // - On mobile/desktop: You can add cookie_jar manually if needed
-    debugPrint('Dio initialized for ${kIsWeb ? 'web' : 'mobile/desktop'} platform');
+    debugPrint(
+      'Dio initialized for ${kIsWeb ? 'web' : 'mobile/desktop'} platform',
+    );
   }
 
   Future<void> _login() async {
@@ -54,58 +55,126 @@ class _LoginScreenState extends State<LoginScreen> {
 
     try {
       final response = await dio.post(
-        '/auth/login',
+        '/auth/login', // Your login endpoint
         data: {
           'email': _emailController.text.trim(),
           'password': _passwordController.text,
         },
         options: Options(
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          // For web, ensure credentials are sent with requests
-          extra: kIsWeb ? {'withCredentials': true} : null,
+          headers: {'Content-Type': 'application/json'},
+          extra:
+              kIsWeb
+                  ? {'withCredentials': true}
+                  : null, 
         ),
       );
 
       if (response.statusCode == 200) {
-        // Login successful
-        if (mounted) {
-          Navigator.pushReplacementNamed(context, '/home');
+        dynamic responseData = response.data;
+        String? extractedIdString;
+
+        if (responseData is Map<String, dynamic>) {
+          if (responseData.containsKey('id')) {
+            extractedIdString = responseData['id']?.toString();
+          } else if (responseData.containsKey('userId')) {
+            // Another common key
+            extractedIdString = responseData['userId']?.toString();
+          } else if (responseData.containsKey('user_id')) {
+            // Snake case
+            extractedIdString = responseData['user_id']?.toString();
+          }
+        } else if (responseData is int) {
+          extractedIdString = responseData.toString();
+        } else if (responseData is String) {
+          extractedIdString = responseData;
         }
+
+        if (extractedIdString != null && extractedIdString.isNotEmpty) {
+          debugPrint("Login successful. Extracted User ID: $extractedIdString");
+          await Provider.of<AuthService>(
+            context,
+            listen: false,
+          ).login(extractedIdString);
+
+          if (mounted) {
+            Navigator.pushReplacementNamed(context, '/home');
+          }
+        } else {
+          debugPrint(
+            "Login successful, but User ID was not found or was invalid in the server response. Response data: $responseData",
+          );
+          if (mounted) {
+            _showErrorDialog(
+              'Login successful, but could not retrieve user session. Please try again.',
+            );
+          }
+        }
+      } else {
+        final String apiErrorMessage =
+            response.data?['message']?.toString() ??
+            response.statusMessage ??
+            'Unknown login error';
+        _showErrorDialog(
+          'Login attempt failed: $apiErrorMessage (Status: ${response.statusCode})',
+        );
       }
     } on DioException catch (e) {
       String errorMessage = 'Login failed';
-      
       if (e.response != null) {
+        debugPrint('DioException Response Status: ${e.response!.statusCode}');
+        debugPrint('DioException Response Data: ${e.response!.data}');
+        var responseData = e.response!.data;
+        String detailMessage = "";
+        if (responseData is Map<String, dynamic> &&
+            responseData.containsKey('message')) {
+          detailMessage = responseData['message'].toString();
+        } else if (responseData is String && responseData.isNotEmpty) {
+          detailMessage = responseData;
+        }
+
         switch (e.response!.statusCode) {
           case 400:
-            errorMessage = 'Invalid email or password';
+            errorMessage = 'Invalid request. ${detailMessage}'.trim();
             break;
           case 401:
-            errorMessage = 'Unauthorized - Invalid credentials';
+            errorMessage =
+                'Unauthorized - Invalid credentials. ${detailMessage}'.trim();
+            break;
+          case 403:
+            errorMessage = 'Forbidden. ${detailMessage}'.trim();
             break;
           case 404:
-            errorMessage = 'User not found';
+            errorMessage =
+                'User or login endpoint not found. ${detailMessage}'.trim();
             break;
           case 500:
-            errorMessage = 'Server error - Please try again later';
+            errorMessage = 'Server error - Please try again later.';
             break;
           default:
-            errorMessage = 'Login failed - ${e.response!.statusMessage}';
+            errorMessage =
+                detailMessage.isNotEmpty
+                    ? detailMessage
+                    : 'Login failed - ${e.response!.statusMessage ?? "Service unavailable"}';
         }
-      } else if (e.type == DioExceptionType.connectionTimeout) {
-        errorMessage = 'Connection timeout - Please check your network';
+      } else if (e.type == DioExceptionType.connectionTimeout ||
+          e.type == DioExceptionType.sendTimeout ||
+          e.type == DioExceptionType.receiveTimeout) {
+        errorMessage =
+            'Connection timeout - Please check your network and try again.';
       } else if (e.type == DioExceptionType.connectionError) {
-        errorMessage = 'Cannot connect to server';
+        errorMessage = 'Network error - Unable to connect to the server.';
+      } else {
+        errorMessage =
+            'An unexpected network error occurred. Please try again.';
       }
-
+      debugPrint("Login DioException: ${e.message}");
       if (mounted) {
         _showErrorDialog(errorMessage);
       }
     } catch (e) {
+      debugPrint("Login generic error: $e");
       if (mounted) {
-        _showErrorDialog('An unexpected error occurred');
+        _showErrorDialog('An unexpected error occurred: ${e.toString()}');
       }
     } finally {
       if (mounted) {
@@ -119,16 +188,17 @@ class _LoginScreenState extends State<LoginScreen> {
   void _showErrorDialog(String message) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Login Error'),
-        content: Text(message),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('OK'),
+      builder:
+          (context) => AlertDialog(
+            title: const Text('Login Error'),
+            content: Text(message),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('OK'),
+              ),
+            ],
           ),
-        ],
-      ),
     );
   }
 
@@ -164,7 +234,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                 ),
                 const SizedBox(height: 32),
-                
+
                 const Text(
                   'Welcome to Arebbus ',
                   style: TextStyle(
@@ -174,13 +244,10 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                 ),
                 const SizedBox(height: 8),
-                
+
                 Text(
                   'Sign in to your account',
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: Colors.grey[600],
-                  ),
+                  style: TextStyle(fontSize: 16, color: Colors.grey[600]),
                 ),
                 const SizedBox(height: 48),
 
@@ -214,18 +281,24 @@ class _LoginScreenState extends State<LoginScreen> {
                             ),
                             enabledBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(8),
-                              borderSide: BorderSide(color: Colors.grey.shade300),
+                              borderSide: BorderSide(
+                                color: Colors.grey.shade300,
+                              ),
                             ),
                             focusedBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(8),
-                              borderSide: BorderSide(color: Colors.blue.shade600),
+                              borderSide: BorderSide(
+                                color: Colors.blue.shade600,
+                              ),
                             ),
                           ),
                           validator: (value) {
                             if (value == null || value.isEmpty) {
                               return 'Please enter your email';
                             }
-                            if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
+                            if (!RegExp(
+                              r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
+                            ).hasMatch(value)) {
                               return 'Please enter a valid email';
                             }
                             return null;
@@ -242,7 +315,9 @@ class _LoginScreenState extends State<LoginScreen> {
                             prefixIcon: const Icon(Icons.lock_outlined),
                             suffixIcon: IconButton(
                               icon: Icon(
-                                _obscurePassword ? Icons.visibility : Icons.visibility_off,
+                                _obscurePassword
+                                    ? Icons.visibility
+                                    : Icons.visibility_off,
                               ),
                               onPressed: () {
                                 setState(() {
@@ -255,11 +330,15 @@ class _LoginScreenState extends State<LoginScreen> {
                             ),
                             enabledBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(8),
-                              borderSide: BorderSide(color: Colors.grey.shade300),
+                              borderSide: BorderSide(
+                                color: Colors.grey.shade300,
+                              ),
                             ),
                             focusedBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(8),
-                              borderSide: BorderSide(color: Colors.blue.shade600),
+                              borderSide: BorderSide(
+                                color: Colors.blue.shade600,
+                              ),
                             ),
                           ),
                           validator: (value) {
@@ -288,22 +367,26 @@ class _LoginScreenState extends State<LoginScreen> {
                               ),
                               elevation: 2,
                             ),
-                            child: _isLoading
-                                ? const SizedBox(
-                                    height: 20,
-                                    width: 20,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                            child:
+                                _isLoading
+                                    ? const SizedBox(
+                                      height: 20,
+                                      width: 20,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        valueColor:
+                                            AlwaysStoppedAnimation<Color>(
+                                              Colors.white,
+                                            ),
+                                      ),
+                                    )
+                                    : const Text(
+                                      'Sign In',
+                                      style: TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w600,
+                                      ),
                                     ),
-                                  )
-                                : const Text(
-                                    'Sign In',
-                                    style: TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
                           ),
                         ),
                       ],
