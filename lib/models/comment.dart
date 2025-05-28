@@ -4,7 +4,7 @@ import 'user.dart';
 class Comment {
   final int? id;
   final String content;
-  final int authorId;
+  final int? authorId;
   final int postId;
   final int numUpvote;
   final User? author;
@@ -14,7 +14,7 @@ class Comment {
   Comment({
     this.id,
     required this.content,
-    required this.authorId,
+    this.authorId,
     required this.postId,
     required this.numUpvote,
     required this.timestamp, // Made timestamp a required named parameter

@@ -32,7 +32,7 @@ class CommentCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     // Assuming comment.author is populated. If not, you'd fetch user by comment.authorId
-    final authorName = comment.author?.name ?? 'Anonymous';
+    final authorName = comment.author?.name ?? 'Somik Dasguta';
     final authorImageUrl = comment.author?.image;
 
     return Padding(
@@ -48,7 +48,7 @@ class CommentCard extends StatelessWidget {
                 : null,
             child: (authorImageUrl == null || authorImageUrl.isEmpty)
                 ? Text(
-                    authorName.isNotEmpty ? authorName[0].toUpperCase() : 'A',
+                    authorName.isNotEmpty ? authorName[0].toUpperCase() : 'S',
                     style: TextStyle(color: theme.colorScheme.onSurfaceVariant),
                   )
                 : null,

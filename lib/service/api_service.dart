@@ -253,14 +253,14 @@ class ApiService {
     }
   }
 
-  Future<Post?> getPostById(int postId) async {
+  Future<Map<String,dynamic>?> getPostById(int? postId) async {
     try {
       final response = await _dio.get(
         '/post',
         queryParameters: {'postId': postId},
       );
       if (response.statusCode == 200 && response.data is Map<String, dynamic>) {
-        return Post.fromJson(response.data as Map<String, dynamic>);
+        return response.data as Map<String, dynamic>;
       } else if (response.statusCode == 404) {
         return null; // Post not found
       } else {

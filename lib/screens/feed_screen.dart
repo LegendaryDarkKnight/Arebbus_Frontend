@@ -17,7 +17,7 @@ class _FeedScreenState extends State<FeedScreen> with TickerProviderStateMixin {
   List<Post> _posts = []; // Master list of all loaded posts
   List<Post> _filteredPosts = [];
   String _selectedTagFilter = 'All';
-  String _sortBy = 'Recent';
+  String _sortBy = 'Default';
   bool _isLoading = true;
   final TextEditingController _searchController = TextEditingController();
 
@@ -70,10 +70,10 @@ class _FeedScreenState extends State<FeedScreen> with TickerProviderStateMixin {
   }
 
   int _currentPage = 0;
-  int _totalPages = 1; // Assume at least one page initially
+  int _totalPages = 10; // Assume at least one page initially
   bool _isLoadingMore = false;
   final ScrollController _scrollController = ScrollController();
-  static const int _pageSize = 10; // Number of posts per page
+  static const int _pageSize = 2; // Number of posts per page
   String? _loadError;
 
   @override
@@ -271,7 +271,6 @@ class _FeedScreenState extends State<FeedScreen> with TickerProviderStateMixin {
                       false);
             }).toList();
       }
-
       if (_sortBy == 'Recent') {
         tempPosts.sort((a, b) => b.timestamp.compareTo(a.timestamp));
       } else if (_sortBy == 'Popular') {
@@ -289,8 +288,6 @@ class _FeedScreenState extends State<FeedScreen> with TickerProviderStateMixin {
         _posts[postIndex] = _posts[postIndex].copyWith(
           numUpvote: _posts[postIndex].numUpvote + 1,
         );
-        // No need to update _filteredPosts directly, _applyFiltersAndSort will handle it if sorting changes
-        // However, for immediate reflection without full re-filter/sort if sort order isn't by Popular:
         final filteredPostIndex = _filteredPosts.indexWhere(
           (p) => p.id == postId,
         );
@@ -339,9 +336,12 @@ class _FeedScreenState extends State<FeedScreen> with TickerProviderStateMixin {
     debugPrint('here');
     try {
       ApiService apiService = ApiService();
-      final Map<String,dynamic> data = await apiService.createPost(content, tagNames);
+      final Map<String, dynamic> data = await apiService.createPost(
+        content,
+        tagNames,
+      );
       final newPost = Post(
-        id: data['postId'],// Mock ID, ensure this is fine with your backend strategy
+        id: data['postId'], // Mock ID, ensure this is fine with your backend strategy
         content: content,
         numUpvote: 0,
         timestamp: DateTime.now(),
@@ -351,7 +351,10 @@ class _FeedScreenState extends State<FeedScreen> with TickerProviderStateMixin {
                 .where((tag) => tag.name.isNotEmpty)
                 .toList(),
         comments: [],
-        author: User(name: data['authorName'], image: 'https://picsum.photos/seed/picsum/200/300')
+        author: User(
+          name: data['authorName'],
+          image: 'https://picsum.photos/seed/picsum/200/300',
+        ),
       );
 
       setState(() {
@@ -572,7 +575,7 @@ class _FeedScreenState extends State<FeedScreen> with TickerProviderStateMixin {
     if (_selectedTagFilter != 'All') {
       activeFilters.add('Tag: $_selectedTagFilter');
     }
-    if (_sortBy != 'Recent') {
+    if (_sortBy != 'Recent' || _sortBy != 'Default') {
       activeFilters.add('Sorted by: $_sortBy');
     }
     if (_searchController.text.isNotEmpty) {
@@ -588,7 +591,7 @@ class _FeedScreenState extends State<FeedScreen> with TickerProviderStateMixin {
     final theme = Theme.of(context);
     final bool hasActiveFilters =
         _selectedTagFilter != 'All' ||
-        _sortBy != 'Recent' ||
+        _sortBy != 'Recent' || _sortBy != 'Default' ||
         _searchController.text.isNotEmpty;
 
     return Scaffold(
@@ -712,8 +715,8 @@ class _FeedScreenState extends State<FeedScreen> with TickerProviderStateMixin {
                             ),
                             decoration: BoxDecoration(
                               color: theme.colorScheme.surfaceContainerHighest
-                                  .withOpacity(
-                                    0.5,
+                                  .withValues(
+                                    alpha: 0.5,
                                   ), // Corrected to use withOpacity
                               borderRadius: BorderRadius.circular(20.0),
                             ),
@@ -729,7 +732,7 @@ class _FeedScreenState extends State<FeedScreen> with TickerProviderStateMixin {
                               ),
                               dropdownColor: theme.cardColor,
                               items:
-                                  <String>['Recent', 'Popular']
+                                  <String>['Recent', 'Popular', 'Default']
                                       .map<DropdownMenuItem<String>>(
                                         (String value) =>
                                             DropdownMenuItem<String>(

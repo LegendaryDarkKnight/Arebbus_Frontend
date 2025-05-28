@@ -34,6 +34,7 @@ class _LoginScreenState extends State<LoginScreen> {
       "BASE_URL",
       defaultValue: "http://localhost:6996",
     );
+    debugPrint(baseUrl);
     dio.options.baseUrl = baseUrl;
     dio.options.connectTimeout = const Duration(seconds: 5);
     dio.options.receiveTimeout = const Duration(seconds: 3);
