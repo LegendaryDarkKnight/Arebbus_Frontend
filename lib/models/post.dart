@@ -1,9 +1,9 @@
-import 'comment.dart';
-import 'tag.dart';
-import 'user.dart';
+import 'package:arebbus/models/comment.dart';
+import 'package:arebbus/models/tag.dart';
+import 'package:arebbus/models/user.dart';
 
 class Post {
-  final int? id;
+  final int id;
   final int? authorId;
   final String content;
   final int numUpvote;
@@ -13,7 +13,7 @@ class Post {
   final List<Comment>? comments;
 
   Post({
-    this.id,
+    required this.id,
     this.authorId,
     required this.content,
     required this.numUpvote,

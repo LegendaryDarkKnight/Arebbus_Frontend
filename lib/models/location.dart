@@ -1,6 +1,6 @@
-import 'bus.dart';
-import 'location_status.dart';
-import 'user.dart';
+import 'package:arebbus/models/bus.dart';
+import 'package:arebbus/models/location_status.dart';
+import 'package:arebbus/models/user.dart';
 
 class Location {
   final int busId;

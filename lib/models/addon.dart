@@ -1,6 +1,5 @@
 import 'package:arebbus/models/addon_category.dart';
-
-import 'user.dart';
+import 'package:arebbus/models/user.dart';
 
 class Addon {
   final String id;

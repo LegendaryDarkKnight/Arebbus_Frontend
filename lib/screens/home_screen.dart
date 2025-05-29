@@ -428,12 +428,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             icon: const Icon(Icons.info_outline),
             onPressed: () => _showDependencyInfo(context),
           ),
-          if(_selectedIndex == 0)
-            IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: ()=>(),//_loadPosts,
-            tooltip: 'Refresh Feed',
-          ),
         ],
       ),
       body: FadeTransition(

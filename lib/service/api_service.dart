@@ -1,6 +1,5 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart' show kIsWeb, debugPrint;
-import 'package:arebbus/models/post.dart';
 import 'package:arebbus/models/comment.dart';
 
 class ApiService {
@@ -21,7 +20,6 @@ class ApiService {
     _dio.options.receiveTimeout = const Duration(seconds: 10);
     _dio.options.sendTimeout = const Duration(seconds: 10);
 
-    // Default headers
     _dio.options.headers = {
       'Content-Type': 'application/json',
       'Accept': 'application/json',
@@ -29,30 +27,88 @@ class ApiService {
 
     if (kIsWeb) {
       _dio.options.extra['withCredentials'] = true;
-      // Add interceptor for better CORS handling
-      _dio.interceptors.add(
-        InterceptorsWrapper(
-          onRequest: (options, handler) {
-            debugPrint('Request: ${options.method} ${options.uri}');
-            debugPrint('Request data: ${options.data}');
-            handler.next(options);
-          },
-          onResponse: (response, handler) {
-            debugPrint('Response: ${response.statusCode} ${response.data}');
-            handler.next(response);
-          },
-          onError: (error, handler) {
-            debugPrint('Error: ${error.type} - ${error.message}');
-            debugPrint('Error response: ${error.response?.data}');
-            handler.next(error);
-          },
-        ),
-      );
+      // _dio.interceptors.add(
+      //   InterceptorsWrapper(
+      //     onRequest: (options, handler) {
+      //       debugPrint('Request: ${options.method} ${options.uri}');
+      //       debugPrint('Request data: ${options.data}');
+      //       handler.next(options);
+      //     },
+      //     onResponse: (response, handler) {
+      //       debugPrint('Response: ${response.statusCode} ${response.data}');
+      //       handler.next(response);
+      //     },
+      //     onError: (error, handler) {
+      //       debugPrint('Error: ${error.type} - ${error.message}');
+      //       debugPrint('Error response: ${error.response?.data}');
+      //       handler.next(error);
+      //     },
+      //   ),
+      // );
     }
-
     debugPrint(
       'Dio initialized for ${kIsWeb ? 'web' : 'mobile/desktop'} platform with base URL: $_baseUrl',
     );
+  }
+
+  Future<Map<String, dynamic>> loginUser(String email, String password) async {
+    final String errorMessage;
+    try {
+      final response = await _dio.post(
+        '/auth/login', // Your login endpoint
+        data: {
+          'email': email,
+          'password': password,
+        },
+        options: Options(
+          headers: {'Content-Type': 'application/json'},
+          extra: kIsWeb ? {'withCredentials': true} : null,
+        ),
+      );
+      return response.data as Map<String,dynamic>;
+    }on DioException catch (e) {
+      if (e.response != null) {
+        switch (e.response!.statusCode) {
+          case 400:
+            errorMessage = 'Invalid request.'.trim();
+            break;
+          case 401:
+            errorMessage =
+                'Unauthorized - Invalid credentials.'.trim();
+            break;
+          case 403:
+            errorMessage = 'Forbidden.'.trim();
+            break;
+          case 404:
+            errorMessage =
+                'User not found.'.trim();
+            break;
+          case 500:
+            errorMessage = 'Password not matched/ Server issues';
+            break;
+          default:
+            errorMessage = 'Login failed - ${e.response!.statusMessage ?? "Service unavailable"}';
+        }
+      } else if (e.type == DioExceptionType.connectionTimeout ||
+          e.type == DioExceptionType.sendTimeout ||
+          e.type == DioExceptionType.receiveTimeout) {
+        errorMessage =
+            'Connection timeout - Please check your network and try again.';
+      } else if (e.type == DioExceptionType.connectionError) {
+        errorMessage = 'Network error - Unable to connect to the server.';
+      } else {
+        errorMessage =
+            'An unexpected network error occurred. Please try again.';
+      }
+    } catch (e) {
+      errorMessage = e.toString();
+    }
+    return {
+            'userId': 0,
+            'message': errorMessage, 
+            'success': false,
+            'token': null,
+    };
   }
 
   // Inside your apiService.fetchPosts method
@@ -61,14 +117,9 @@ class ApiService {
       final response = await _dio.get(
         '/post/all', // Or your actual endpoint
         queryParameters: {'page': page, 'size': size},
-        // Consider setting options: Options(responseType: ResponseType.json) if you always expect JSON
+        options: Options(responseType: ResponseType.json)
       );
 
-      // Crucial Debugging:
-      debugPrint('API Response Status Code: ${response.statusCode}');
-      debugPrint('API Response Headers: ${response.headers}');
-      debugPrint('API Response Data Type: ${response.data.runtimeType}');
-      debugPrint('API Response Data: ${response.data}');
 
       if (response.statusCode == 200) {
         if (response.data is Map<String, dynamic>) {
@@ -253,7 +304,7 @@ class ApiService {
     }
   }
 
-  Future<Map<String,dynamic>?> getPostById(int? postId) async {
+  Future<Map<String, dynamic>?> getPostById(int postId) async {
     try {
       final response = await _dio.get(
         '/post',

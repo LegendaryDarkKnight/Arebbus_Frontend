@@ -1,5 +1,5 @@
-import 'user.dart';
-import 'route.dart';
+import 'package:arebbus/models/user.dart';
+import 'package:arebbus/models/route.dart';
 
 class Bus {
   final int? id;

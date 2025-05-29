@@ -1,5 +1,5 @@
-import 'bus.dart';
-import 'user.dart';
+import 'package:arebbus/models/bus.dart';
+import 'package:arebbus/models/user.dart';
 
 class WaitingFor {
   final int userId;

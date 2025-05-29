@@ -1,5 +1,5 @@
-import 'post.dart';
-import 'user.dart';
+import 'package:arebbus/models/post.dart';
+import 'package:arebbus/models/user.dart';
 
 class Comment {
   final int? id;

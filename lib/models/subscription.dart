@@ -1,6 +1,6 @@
-import 'route.dart';
-import 'stop.dart';
-import 'user.dart';
+import 'package:arebbus/models/route.dart';
+import 'package:arebbus/models/stop.dart';
+import 'package:arebbus/models/user.dart';
 
 class RouteSubscription {
   final int userId;
