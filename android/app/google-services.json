@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "707582725789",
+    "project_id": "arebbus-v1",
+    "storage_bucket": "arebbus-v1.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:707582725789:android:40e636aa8cd9a9b3f3ce74",
+        "android_client_info": {
+          "package_name": "com.example.arebbus"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCcPWzIJXUhWvtlbVM79bAau9MSMZyXvNc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

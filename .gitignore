@@ -50,6 +50,7 @@ demo
 backups
 important_commands
 .firebase
+assets/config
 #some text file for my use
 gemini.txt 
 claude.txt

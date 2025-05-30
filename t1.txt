@@ -1,0 +1,933 @@
+import 'package:flutter/material.dart';
+import 'package:arebbus/service/api_service.dart';
+import 'package:arebbus/service/auth_service.dart';
+import 'register_screen.dart';
+
+class LoginScreen extends StatefulWidget {
+  const LoginScreen({super.key});
+
+  @override
+  State<LoginScreen> createState() => _LoginScreenState();
+}
+
+class _LoginScreenState extends State<LoginScreen> {
+  final _formKey = GlobalKey<FormState>();
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
+
+  bool _isLoading = false;
+  bool _obscurePassword = true;
+  late final ApiService _apiService;
+
+  static final _emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
+
+  @override
+  void initState() {
+    super.initState();
+    _apiService = ApiService();
+    _checkExistingSession();
+  }
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
+
+  /// Check if user is already logged in
+  Future<void> _checkExistingSession() async {
+    if (AuthService.instance.isLoggedIn && AuthService.instance.isSessionValid()) {
+      // Optionally validate session with server
+      // final isValid = await _apiService.validateSession();
+      // if (isValid) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          Navigator.pushReplacementNamed(context, '/home');
+        });
+      // }
+    }
+  }
+
+  Future<void> _login() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    setState(() => _isLoading = true);
+
+    try {
+      final response = await _apiService.loginUser(
+        _emailController.text.trim(),
+        _passwordController.text,
+      );
+
+      if (!mounted) return;
+
+      final success = response['success'] == true;
+      final message = response['message'] ?? 'Unknown error';
+
+      if (success) {
+        // Auth data is already stored in ApiService.loginUser()
+        // Navigate to home screen
+        Navigator.pushReplacementNamed(context, '/home');
+        
+        // Show success message
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Welcome back, ${AuthService.instance.username ?? 'User'}!'),
+            backgroundColor: Colors.green,
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      } else {
+        _showErrorDialog(message);
+      }
+    } catch (e) {
+      if (mounted) {
+        _showErrorDialog('An unexpected error occurred. Please try again.');
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
+  }
+
+  void _showErrorDialog(String message) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Login Error'),
+        content: Text(message),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEmailField() {
+    return TextFormField(
+      controller: _emailController,
+      keyboardType: TextInputType.emailAddress,
+      decoration: _inputDecoration('Email', Icons.email_outlined),
+      validator: (value) {
+        if (value == null || value.isEmpty) return 'Please enter your email';
+        if (!_emailRegex.hasMatch(value)) return 'Please enter a valid email';
+        return null;
+      },
+    );
+  }
+
+  Widget _buildPasswordField() {
+    return TextFormField(
+      controller: _passwordController,
+      obscureText: _obscurePassword,
+      decoration: _inputDecoration(
+        'Password',
+        Icons.lock_outlined,
+        suffix: IconButton(
+          icon: Icon(
+            _obscurePassword ? Icons.visibility : Icons.visibility_off,
+          ),
+          onPressed: () {
+            setState(() {
+              _obscurePassword = !_obscurePassword;
+            });
+          },
+        ),
+      ),
+      validator: (value) {
+        if (value == null || value.isEmpty) return 'Please enter your password';
+        if (value.length < 6) return 'Password must be at least 6 characters';
+        return null;
+      },
+    );
+  }
+
+  InputDecoration _inputDecoration(String label, IconData icon, {Widget? suffix}) {
+    return InputDecoration(
+      labelText: label,
+      prefixIcon: Icon(icon),
+      suffixIcon: suffix,
+      border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(8),
+        borderSide: BorderSide(color: Colors.grey.shade300),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(8),
+        borderSide: BorderSide(color: Colors.blue.shade600),
+      ),
+    );
+  }
+
+  Widget _buildLoginForm() {
+    return Form(
+      key: _formKey,
+      child: Column(
+        children: [
+          _buildEmailField(),
+          const SizedBox(height: 16),
+          _buildPasswordField(),
+          const SizedBox(height: 24),
+          _buildLoginButton(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLoginButton() {
+    return SizedBox(
+      width: double.infinity,
+      height: 50,
+      child: ElevatedButton(
+        onPressed: _isLoading ? null : _login,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Colors.blue.shade600,
+          foregroundColor: Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8),
+          ),
+          elevation: 2,
+        ),
+        child: _isLoading
+            ? const SizedBox(
+                height: 20,
+                width: 20,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                ),
+              )
+            : const Text(
+                'Sign In',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+              ),
+      ),
+    );
+  }
+
+  Widget _buildRegisterLink() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Text("Don't have an account? ", style: TextStyle(color: Colors.grey[600])),
+        GestureDetector(
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const RegisterScreen()),
+            );
+          },
+          child: Text(
+            'Sign Up',
+            style: TextStyle(color: Colors.blue.shade600, fontWeight: FontWeight.w600),
+          ),
+        ),
+      ],
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.grey[100],
+      body: SafeArea(
+        child: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(24.0),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                // Logo
+                Container(
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: Colors.blue.shade600,
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.directions_bus, size: 50, color: Colors.white),
+                ),
+                const SizedBox(height: 32),
+
+                // Title
+                const Text(
+                  'Welcome to Arebbus',
+                  style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.black87),
+                ),
+                const SizedBox(height: 8),
+                Text('Sign in to your account', style: TextStyle(fontSize: 16, color: Colors.grey[600])),
+                const SizedBox(height: 48),
+
+                // Form Container
+                Container(
+                  padding: const EdgeInsets.all(24),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.05),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: _buildLoginForm(),
+                ),
+                const SizedBox(height: 24),
+
+                // Register Link
+                _buildRegisterLink(),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+
+
+import 'package:arebbus/config/app_config.dart' show AppConfig;
+import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart' show kIsWeb, debugPrint;
+import 'package:arebbus/models/comment.dart';
+import 'package:arebbus/service/auth_service.dart'; // Import the auth service
+import 'package:dio_cookie_manager/dio_cookie_manager.dart';
+import 'package:cookie_jar/cookie_jar.dart';
+
+class ApiService {
+  late Dio _dio;
+  late CookieJar _cookieJar;
+  static final String _baseUrl = AppConfig.instance.apiBaseUrl;
+
+  ApiService() {
+    _initializeDio(false);
+  }
+
+  void _enableInterceptors() {
+    _dio.interceptors.add(
+      InterceptorsWrapper(
+        onRequest: (options, handler) {
+          debugPrint('Request: ${options.method} ${options.uri}');
+          debugPrint('Request data: ${options.data}');
+          handler.next(options);
+        },
+        onResponse: (response, handler) {
+          debugPrint('Response: ${response.statusCode} ${response.data}');
+          handler.next(response);
+        },
+        onError: (error, handler) {
+          debugPrint('Error: ${error.type} - ${error.message}');
+          debugPrint('Error response: ${error.response?.data}');
+          
+          // Handle unauthorized errors (cookie expired)
+          if (error.response?.statusCode == 401) {
+            _handleUnauthorized();
+          }
+          
+          handler.next(error);
+        },
+      ),
+    );
+  }
+
+  void _initializeDio(bool en) {
+    _cookieJar = CookieJar();
+    _dio = Dio();
+    _dio.options.baseUrl = _baseUrl;
+    _dio.options.connectTimeout = const Duration(seconds: 10);
+    _dio.options.receiveTimeout = const Duration(seconds: 10);
+    _dio.options.sendTimeout = const Duration(seconds: 10);
+
+    _dio.options.headers = {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+    };
+
+    // Add cookie manager
+    if(!kIsWeb){
+    _dio.interceptors.add(CookieManager(_cookieJar));
+
+    }
+
+    if (kIsWeb) {
+      _dio.options.extra['withCredentials'] = true;
+      if(en) {
+        _enableInterceptors();
+      }
+    }
+    debugPrint(
+      'Dio initialized for ${kIsWeb ? 'web' : 'mobile/desktop'} platform with base URL: $_baseUrl',
+    );
+  }
+
+  /// Handle unauthorized responses (cookie expired)
+  Future<void> _handleUnauthorized() async {
+    debugPrint('Unauthorized response - clearing auth data');
+    await AuthService.instance.clearAuthData();
+    // You might want to navigate to login screen here
+    // This would typically be handled by a navigation service or state management
+  }
+
+  Future<Map<String, dynamic>> loginUser(String email, String password) async {
+    final String errorMessage;
+    try {
+      final response = await _dio.post(
+        '/auth/login',
+        data: {'email': email, 'password': password},
+        options: Options(
+          headers: {'Content-Type': 'application/json'},
+          extra: kIsWeb ? {'withCredentials': true} : null,
+        ),
+      );
+      
+      final responseData = response.data as Map<String, dynamic>;
+      
+      // If login is successful, store the auth data
+      if (responseData['success'] == true) {
+        final authResponse = AuthResponse.fromJson(responseData);
+        await AuthService.instance.setAuthData(authResponse);
+        debugPrint('Login successful, auth data stored');
+      }
+      
+      return responseData;
+    } on DioException catch (e) {
+      if (e.response != null) {
+        switch (e.response!.statusCode) {
+          case 400:
+            errorMessage = 'Invalid request.'.trim();
+            break;
+          case 401:
+            errorMessage = 'Unauthorized - Invalid credentials.'.trim();
+            break;
+          case 403:
+            errorMessage = 'Forbidden.'.trim();
+            break;
+          case 404:
+            errorMessage = 'User not found.'.trim();
+            break;
+          case 500:
+            errorMessage = 'Password not matched/ Server issues';
+            break;
+          default:
+            errorMessage =
+                'Login failed - ${e.response!.statusMessage ?? "Service unavailable"}';
+        }
+      } else if (e.type == DioExceptionType.connectionTimeout ||
+          e.type == DioExceptionType.sendTimeout ||
+          e.type == DioExceptionType.receiveTimeout) {
+        errorMessage =
+            'Connection timeout - Please check your network and try again.';
+      } else if (e.type == DioExceptionType.connectionError) {
+        errorMessage = 'Network error - Unable to connect to the server.';
+      } else {
+        errorMessage =
+            'An unexpected network error occurred. Please try again.';
+      }
+    } catch (e) {
+      errorMessage = e.toString();
+    }
+    return {
+      'userId': 0,
+      'message': errorMessage,
+      'success': false,
+      'token': null,
+    };
+  }
+
+  /// Logout user and clear cookies
+  Future<Map<String, dynamic>> logoutUser() async {
+    try {
+      final response = await _dio.post(
+        '/auth/logout',
+        options: Options(
+          extra: kIsWeb ? {'withCredentials': true} : null,
+        ),
+      );
+      
+      // Clear stored auth data regardless of server response
+      await AuthService.instance.clearAuthData();
+      
+      // Clear cookies
+      _cookieJar.deleteAll();
+      
+      debugPrint('Logout successful');
+      return {
+        'success': true,
+        'message': 'Logged out successfully',
+      };
+    } on DioException catch (e) {
+      // Even if logout fails on server, clear local data
+      await AuthService.instance.clearAuthData();
+      _cookieJar.deleteAll();
+      
+      debugPrint('Logout error: ${e.message}');
+      return {
+        'success': true, // Still return success since we cleared local data
+        'message': 'Logged out locally',
+      };
+    }
+  }
+
+  /// Check if user session is still valid
+  Future<bool> validateSession() async {
+    if (!AuthService.instance.isLoggedIn) return false;
+    
+    try {
+      final response = await _dio.get(
+        '/auth/validate',
+        options: Options(
+          extra: kIsWeb ? {'withCredentials': true} : null,
+        ),
+      );
+      
+      return response.statusCode == 200;
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 401) {
+        await _handleUnauthorized();
+      }
+      return false;
+    }
+  }
+
+  // ... (rest of your existing methods remain the same)
+
+  Future<Map<String, dynamic>> fetchPosts(int page, int size) async {
+    try {
+      final response = await _dio.get(
+        '/post/all',
+        queryParameters: {'page': page, 'size': size},
+        options: Options(
+          responseType: ResponseType.json,
+          extra: kIsWeb ? {'withCredentials': true} : null,
+        ),
+      );
+
+      if (response.statusCode == 200) {
+        if (response.data is Map<String, dynamic>) {
+          return response.data as Map<String, dynamic>;
+        } else if (response.data is String) {
+          debugPrint('API returned a String with 200 OK: "${response.data}"');
+          throw Exception(
+            'API returned an unexpected message: ${response.data}',
+          );
+        } else {
+          throw Exception(
+            'API returned unexpected data type: ${response.data.runtimeType}',
+          );
+        }
+      } else {
+        throw DioException(
+          requestOptions: response.requestOptions,
+          response: response,
+          error:
+              'API request failed with status ${response.statusCode}: ${response.data}',
+        );
+      }
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 401) {
+        await _handleUnauthorized();
+      }
+      debugPrint('DioException in fetchPosts: ${e.message}');
+      debugPrint('DioException response data: ${e.response?.data}');
+      
+      if (e.response?.data is String &&
+          (e.response!.data as String).isNotEmpty) {
+        throw Exception('Failed to load posts: ${e.response!.data}');
+      } else if (e.response?.data is Map &&
+          e.response!.data['message'] != null) {
+        throw Exception('Failed to load posts: ${e.response!.data['message']}');
+      }
+      throw Exception('Failed to load posts (Network error): ${e.message}');
+    } catch (e) {
+      debugPrint('Generic error in fetchPosts: $e');
+      throw Exception(
+        'An unexpected error occurred while fetching posts: ${e.toString()}',
+      );
+    }
+  }
+
+  Future<Map<String, dynamic>> createPost(
+    String content,
+    List<String> tags,
+  ) async {
+    try {
+      debugPrint('Creating post with content: $content and tags: $tags');
+      debugPrint('Making request to: ${_dio.options.baseUrl}/post/create');
+
+      final response = await _dio.post(
+        '/post/create',
+        data: {'content': content, 'tags': tags},
+        options: Options(
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+          },
+          extra: kIsWeb ? {'withCredentials': true} : null,
+          sendTimeout: const Duration(seconds: 10),
+          receiveTimeout: const Duration(seconds: 10),
+        ),
+      );
+
+      debugPrint('Response status: ${response.statusCode}');
+      debugPrint('Response data: ${response.data}');
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        return response.data as Map<String, dynamic>;
+      } else {
+        throw DioException(
+          requestOptions: response.requestOptions,
+          response: response,
+          error: 'Failed to create post: Status code ${response.statusCode}',
+        );
+      }
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 401) {
+        await _handleUnauthorized();
+      }
+      
+      debugPrint('DioException creating post: ${e.message}');
+      debugPrint('DioException type: ${e.type}');
+      debugPrint('DioException response: ${e.response?.data}');
+
+      switch (e.type) {
+        case DioExceptionType.connectionTimeout:
+          throw Exception(
+            'Connection timeout - please check your internet connection',
+          );
+        case DioExceptionType.sendTimeout:
+          throw Exception('Request timeout - please try again');
+        case DioExceptionType.receiveTimeout:
+          throw Exception('Server response timeout - please try again');
+        case DioExceptionType.connectionError:
+          throw Exception(
+            'Network connection error - please check if the server is running and CORS is configured',
+          );
+        case DioExceptionType.badResponse:
+          throw Exception(
+            'Server error: ${e.response?.statusCode} - ${e.response?.data}',
+          );
+        default:
+          throw Exception('Failed to create post: ${e.message}');
+      }
+    } catch (e) {
+      debugPrint('Generic error creating post: $e');
+      throw Exception('An unexpected error occurred: ${e.toString()}');
+    }
+  }
+
+  // ... (include all your other existing methods with cookie support)
+  
+  Future<void> deletePost(int postId) async {
+    try {
+      final response = await _dio.delete(
+        '/post/delete',
+        data: {'postId': postId},
+        options: Options(
+          extra: kIsWeb ? {'withCredentials': true} : null,
+        ),
+      );
+      if (response.statusCode != 200 && response.statusCode != 204) {
+        throw DioException(
+          requestOptions: response.requestOptions,
+          response: response,
+          error: 'Failed to delete post: Status code ${response.statusCode}',
+        );
+      }
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 401) {
+        await _handleUnauthorized();
+      }
+      debugPrint('Error deleting post: $e');
+      throw Exception('Failed to delete post: ${e.message}');
+    }
+  }
+
+  Future<List<Comment>> fetchCommentsForPost(int postId) async {
+    try {
+      final response = await _dio.get(
+        '/post/$postId/comments',
+        options: Options(
+          extra: kIsWeb ? {'withCredentials': true} : null,
+        ),
+      );
+      if (response.statusCode == 200 && response.data is List) {
+        final List<dynamic> commentData = response.data as List<dynamic>;
+        return commentData
+            .map((data) => Comment.fromJson(data as Map<String, dynamic>))
+            .toList();
+      } else if (response.statusCode == 200 &&
+          response.data is Map &&
+          response.data['comments'] is List) {
+        final List<dynamic> commentData =
+            response.data['comments'] as List<dynamic>;
+        return commentData
+            .map((data) => Comment.fromJson(data as Map<String, dynamic>))
+            .toList();
+      } else {
+        throw DioException(
+          requestOptions: response.requestOptions,
+          response: response,
+          error: 'Failed to load comments: Status code ${response.statusCode}',
+        );
+      }
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 401) {
+        await _handleUnauthorized();
+      }
+      debugPrint('Error fetching comments for post $postId: $e');
+      throw Exception('Failed to load comments: ${e.message}');
+    }
+  }
+
+  Future<Comment> createComment(int postId, String content) async {
+    try {
+      final response = await _dio.post(
+        '/post/$postId/comment/create',
+        data: {
+          'content': content,
+        },
+        options: Options(
+          extra: kIsWeb ? {'withCredentials': true} : null,
+        ),
+      );
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        Map<String, dynamic> responseData =
+            response.data as Map<String, dynamic>;
+        if (responseData['postId'] == null) responseData['postId'] = postId;
+        return Comment.fromJson(responseData);
+      } else {
+        throw DioException(
+          requestOptions: response.requestOptions,
+          response: response,
+          error: 'Failed to create comment: Status code ${response.statusCode}',
+        );
+      }
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 401) {
+        await _handleUnauthorized();
+      }
+      debugPrint('Error creating comment for post $postId: $e');
+      throw Exception('Failed to create comment: ${e.message}');
+    }
+  }
+
+  Future<Map<String, dynamic>?> getPostById(int postId) async {
+    try {
+      final response = await _dio.get(
+        '/post',
+        queryParameters: {'postId': postId},
+        options: Options(
+          extra: kIsWeb ? {'withCredentials': true} : null,
+        ),
+      );
+      if (response.statusCode == 200 && response.data is Map<String, dynamic>) {
+        return response.data as Map<String, dynamic>;
+      } else if (response.statusCode == 404) {
+        return null; // Post not found
+      } else {
+        throw DioException(
+          requestOptions: response.requestOptions,
+          response: response,
+          error: 'Failed to load post: Status code ${response.statusCode}',
+        );
+      }
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 401) {
+        await _handleUnauthorized();
+      }
+      debugPrint('Error fetching post by ID $postId: $e');
+      throw Exception('Failed to load post: ${e.message}');
+    }
+  }
+}
+
+import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
+import 'package:arebbus/screens/login_screen.dart';
+import 'package:arebbus/screens/register_screen.dart';
+import 'package:arebbus/screens/home_screen.dart';
+import 'package:arebbus/config/app_config.dart';
+import 'package:arebbus/service/auth_service.dart';
+
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  
+  // Initialize app config
+  await AppConfig.initialize();
+  
+  // Initialize Firebase if needed
+  if (kIsWeb) {
+    await Firebase.initializeApp(
+      options: FirebaseOptions(
+        apiKey: AppConfig.instance.apiKey,
+        appId: AppConfig.instance.appId,
+        messagingSenderId: AppConfig.instance.messagingSenderId,
+        projectId: AppConfig.instance.projectId,
+      ),
+    );
+  }
+  
+  // Initialize authentication service
+  await AuthService.instance.initialize();
+  
+  runApp(const ArebbusApp());
+}
+
+/// Route names used throughout the app
+class AppRoutes {
+  static const String login = '/login';
+  static const String register = '/register';
+  static const String home = '/home';
+}
+
+/// The main application widget
+class ArebbusApp extends StatelessWidget {
+  const ArebbusApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'Arebbus New',
+      debugShowCheckedModeBanner: false,
+      theme: AppTheme.buildTheme(),
+      // Use AuthWrapper to determine initial route based on login status
+      home: const AuthWrapper(),
+      routes: {
+        AppRoutes.login: (context) => const LoginScreen(),
+        AppRoutes.register: (context) => const RegisterScreen(),
+        AppRoutes.home: (context) => const HomeScreen(),
+      },
+    );
+  }
+}
+
+/// Wrapper widget to check authentication status and navigate accordingly
+class AuthWrapper extends StatefulWidget {
+  const AuthWrapper({super.key});
+
+  @override
+  State<AuthWrapper> createState() => _AuthWrapperState();
+}
+
+class _AuthWrapperState extends State<AuthWrapper> {
+  bool _isLoading = true;
+  bool _isLoggedIn = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkAuthStatus();
+  }
+
+  Future<void> _checkAuthStatus() async {
+    // Check if user is logged in and session is valid
+    final isLoggedIn = AuthService.instance.isLoggedIn && 
+                      AuthService.instance.isSessionValid();
+    
+    // You might want to validate session with server here
+    // final isSessionValid = await ApiService().validateSession();
+    
+    setState(() {
+      _isLoggedIn = isLoggedIn;
+      _isLoading = false;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_isLoading) {
+      return const Scaffold(
+        body: Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
+
+    // Navigate to appropriate screen based on auth status
+    return _isLoggedIn ? const HomeScreen() : const LoginScreen();
+  }
+}
+
+/// Centralized theme builder for the Arebbus app
+class AppTheme {
+  static ThemeData buildTheme() {
+    final Color seedColor = Colors.teal;
+
+    return ThemeData(
+      colorScheme: ColorScheme.fromSeed(
+        seedColor: seedColor,
+        brightness: Brightness.light,
+      ),
+      useMaterial3: true,
+      fontFamily: 'Roboto',
+
+      // AppBar Theme
+      appBarTheme: const AppBarTheme(
+        backgroundColor: Colors.teal,
+        foregroundColor: Colors.white,
+        elevation: 4.0,
+        centerTitle: true,
+      ),
+
+      // Elevated Button Theme
+      elevatedButtonTheme: ElevatedButtonThemeData(
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Colors.tealAccent[700],
+          foregroundColor: Colors.black87,
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+          textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12.0),
+          ),
+        ),
+      ),
+
+      // Input Decoration Theme
+      inputDecorationTheme: InputDecorationTheme(
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10.0)),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10.0),
+          borderSide: BorderSide(color: Colors.tealAccent[700]!, width: 2.0),
+        ),
+        labelStyle: const TextStyle(color: Colors.teal),
+      ),
+
+      // Card Theme
+      cardTheme: CardTheme(
+        elevation: 3,
+        shadowColor: Colors.grey[300],
+        margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(14.0),
+        ),
+      ),
+
+      // Bottom Navigation Bar Theme
+      bottomNavigationBarTheme: BottomNavigationBarThemeData(
+        backgroundColor: Colors.white,
+        selectedItemColor: Colors.tealAccent[700],
+        unselectedItemColor: Colors.grey[600],
+        showUnselectedLabels: true,
+        type: BottomNavigationBarType.fixed,
+      ),
+
+      // General Button Theme (for legacy widgets)
+      buttonTheme: ButtonThemeData(
+        buttonColor: Colors.tealAccent[700],
+        textTheme: ButtonTextTheme.primary,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20.0),
+        ),
+      ),
+
+      visualDensity: VisualDensity.adaptivePlatformDensity,
+    );
+  }
+}

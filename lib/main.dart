@@ -1,80 +1,125 @@
+import 'package:flutter/material.dart';
 import 'package:arebbus/screens/login_screen.dart';
 import 'package:arebbus/screens/register_screen.dart';
-import 'package:flutter/material.dart';
 import 'package:arebbus/screens/home_screen.dart';
+import 'package:arebbus/config/app_config.dart';
 
-void main(){
-  runApp(const Arebbus());
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await AppConfig.initialize();
+  // if (kIsWeb) {
+  //   await Firebase.initializeApp(
+  //     options: FirebaseOptions(
+  //       apiKey: AppConfig.instance.apiKey,
+  //       appId: AppConfig.instance.appId,
+  //       messagingSenderId: AppConfig.instance.messagingSenderId,
+  //       projectId: AppConfig.instance.projectId,
+  //     ),
+  //   );
+  // }
+  runApp(const ArebbusApp());
 }
 
-class Arebbus extends StatelessWidget{
-  const Arebbus({super.key});
+/// Route names used throughout the app
+class AppRoutes {
+  static const String login = '/login';
+  static const String register = '/register';
+  static const String home = '/home';
+}
+
+/// The main application widget
+class ArebbusApp extends StatelessWidget {
+  const ArebbusApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: "Arebbus",
-      theme: ThemeData(
-        primarySwatch: Colors.teal,
-        visualDensity: VisualDensity.adaptivePlatformDensity,
-        fontFamily: 'Roboto', // Example font
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.teal),
-        useMaterial3: true,
-        appBarTheme: const AppBarTheme(
-          backgroundColor: Colors.teal,
-          foregroundColor: Colors.white,
-          elevation: 4.0,
-        ),
-        buttonTheme: ButtonThemeData(
-          buttonColor: Colors.tealAccent[700],
-          textTheme: ButtonTextTheme.primary,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20.0),
-          ),
-        ),
-        elevatedButtonTheme: ElevatedButtonThemeData(
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.tealAccent[700],
-            foregroundColor: Colors.black87,
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-            textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12.0),
-            ),
-          ),
-        ),
-        cardTheme: CardTheme(
-          elevation: 2.0,
-          margin: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 5.0),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10.0),
-          ),
-        ),
-        inputDecorationTheme: InputDecorationTheme(
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(8.0),
-            borderSide: const BorderSide(color: Colors.teal),
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(8.0),
-            borderSide: BorderSide(color: Colors.tealAccent[700]!, width: 2.0),
-          ),
-          labelStyle: const TextStyle(color: Colors.teal),
-        ),
-        bottomNavigationBarTheme: BottomNavigationBarThemeData(
-          selectedItemColor: Colors.tealAccent[700],
-          unselectedItemColor: Colors.grey[600],
-          backgroundColor: Colors.white,
-        ),
-      ),
+      title: 'Arebbus New',
       debugShowCheckedModeBanner: false,
-      initialRoute: '/login',
+      theme: AppTheme.buildTheme(),
+      initialRoute: AppRoutes.login,
       routes: {
-        '/login': (context) => const LoginScreen(),
-        '/register': (context) => const RegisterScreen(),
-        '/home': (context) => const HomeScreen(),
+        AppRoutes.login: (context) => const LoginScreen(),
+        AppRoutes.register: (context) => const RegisterScreen(),
+        AppRoutes.home: (context) => const HomeScreen(),
       },
     );
   }
-  
+}
+
+/// Centralized theme builder for the Arebbus app
+class AppTheme {
+  static ThemeData buildTheme() {
+    final Color seedColor = Colors.teal;
+
+    return ThemeData(
+      colorScheme: ColorScheme.fromSeed(
+        seedColor: seedColor,
+        brightness: Brightness.light,
+      ),
+      useMaterial3: true,
+      fontFamily: 'Roboto',
+
+      // AppBar Theme
+      appBarTheme: const AppBarTheme(
+        backgroundColor: Colors.teal,
+        foregroundColor: Colors.white,
+        elevation: 4.0,
+        centerTitle: true,
+      ),
+
+      // Elevated Button Theme
+      elevatedButtonTheme: ElevatedButtonThemeData(
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Colors.tealAccent[700],
+          foregroundColor: Colors.black87,
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+          textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12.0),
+          ),
+        ),
+      ),
+
+      // Input Decoration Theme
+      inputDecorationTheme: InputDecorationTheme(
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10.0)),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10.0),
+          borderSide: BorderSide(color: Colors.tealAccent[700]!, width: 2.0),
+        ),
+        labelStyle: const TextStyle(color: Colors.teal),
+      ),
+
+      // Card Theme
+      cardTheme: CardTheme(
+        elevation: 3,
+        shadowColor: Colors.grey[300],
+        margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(14.0),
+        ),
+      ),
+
+      // Bottom Navigation Bar Theme
+      bottomNavigationBarTheme: BottomNavigationBarThemeData(
+        backgroundColor: Colors.white,
+        selectedItemColor: Colors.tealAccent[700],
+        unselectedItemColor: Colors.grey[600],
+        showUnselectedLabels: true,
+        type: BottomNavigationBarType.fixed,
+      ),
+
+      // General Button Theme (for legacy widgets)
+      buttonTheme: ButtonThemeData(
+        buttonColor: Colors.tealAccent[700],
+        textTheme: ButtonTextTheme.primary,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20.0),
+        ),
+      ),
+
+      visualDensity: VisualDensity.adaptivePlatformDensity,
+    );
+  }
 }

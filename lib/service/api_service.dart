@@ -1,19 +1,38 @@
+import 'package:arebbus/config/app_config.dart' show AppConfig;
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart' show kIsWeb, debugPrint;
 import 'package:arebbus/models/comment.dart';
 
 class ApiService {
   late Dio _dio;
-  static const String _baseUrl = String.fromEnvironment(
-    "BASE_URL",
-    defaultValue: "http://localhost:6996",
-  );
+  static final String _baseUrl = AppConfig.instance.apiBaseUrl;
 
   ApiService() {
-    _initializeDio();
+    _initializeDio(false);
   }
 
-  void _initializeDio() {
+  void _enableInterceptors() {
+    _dio.interceptors.add(
+      InterceptorsWrapper(
+        onRequest: (options, handler) {
+          debugPrint('Request: ${options.method} ${options.uri}');
+          debugPrint('Request data: ${options.data}');
+          handler.next(options);
+        },
+        onResponse: (response, handler) {
+          debugPrint('Response: ${response.statusCode} ${response.data}');
+          handler.next(response);
+        },
+        onError: (error, handler) {
+          debugPrint('Error: ${error.type} - ${error.message}');
+          debugPrint('Error response: ${error.response?.data}');
+          handler.next(error);
+        },
+      ),
+    );
+  }
+
+  void _initializeDio(bool en) {
     _dio = Dio();
     _dio.options.baseUrl = _baseUrl;
     _dio.options.connectTimeout = const Duration(seconds: 10);
@@ -27,24 +46,9 @@ class ApiService {
 
     if (kIsWeb) {
       _dio.options.extra['withCredentials'] = true;
-      // _dio.interceptors.add(
-      //   InterceptorsWrapper(
-      //     onRequest: (options, handler) {
-      //       debugPrint('Request: ${options.method} ${options.uri}');
-      //       debugPrint('Request data: ${options.data}');
-      //       handler.next(options);
-      //     },
-      //     onResponse: (response, handler) {
-      //       debugPrint('Response: ${response.statusCode} ${response.data}');
-      //       handler.next(response);
-      //     },
-      //     onError: (error, handler) {
-      //       debugPrint('Error: ${error.type} - ${error.message}');
-      //       debugPrint('Error response: ${error.response?.data}');
-      //       handler.next(error);
-      //     },
-      //   ),
-      // );
+      if(en) {
+        _enableInterceptors();
+      }
     }
     debugPrint(
       'Dio initialized for ${kIsWeb ? 'web' : 'mobile/desktop'} platform with base URL: $_baseUrl',
@@ -56,38 +60,34 @@ class ApiService {
     try {
       final response = await _dio.post(
         '/auth/login', // Your login endpoint
-        data: {
-          'email': email,
-          'password': password,
-        },
+        data: {'email': email, 'password': password},
         options: Options(
           headers: {'Content-Type': 'application/json'},
           extra: kIsWeb ? {'withCredentials': true} : null,
         ),
       );
-      return response.data as Map<String,dynamic>;
-    }on DioException catch (e) {
+      return response.data as Map<String, dynamic>;
+    } on DioException catch (e) {
       if (e.response != null) {
         switch (e.response!.statusCode) {
           case 400:
             errorMessage = 'Invalid request.'.trim();
             break;
           case 401:
-            errorMessage =
-                'Unauthorized - Invalid credentials.'.trim();
+            errorMessage = 'Unauthorized - Invalid credentials.'.trim();
             break;
           case 403:
             errorMessage = 'Forbidden.'.trim();
             break;
           case 404:
-            errorMessage =
-                'User not found.'.trim();
+            errorMessage = 'User not found.'.trim();
             break;
           case 500:
             errorMessage = 'Password not matched/ Server issues';
             break;
           default:
-            errorMessage = 'Login failed - ${e.response!.statusMessage ?? "Service unavailable"}';
+            errorMessage =
+                'Login failed - ${e.response!.statusMessage ?? "Service unavailable"}';
         }
       } else if (e.type == DioExceptionType.connectionTimeout ||
           e.type == DioExceptionType.sendTimeout ||
@@ -104,10 +104,10 @@ class ApiService {
       errorMessage = e.toString();
     }
     return {
-            'userId': 0,
-            'message': errorMessage, 
-            'success': false,
-            'token': null,
+      'userId': 0,
+      'message': errorMessage,
+      'success': false,
+      'token': null,
     };
   }
 
@@ -117,9 +117,8 @@ class ApiService {
       final response = await _dio.get(
         '/post/all', // Or your actual endpoint
         queryParameters: {'page': page, 'size': size},
-        options: Options(responseType: ResponseType.json)
+        options: Options(responseType: ResponseType.json),
       );
-
 
       if (response.statusCode == 200) {
         if (response.data is Map<String, dynamic>) {
