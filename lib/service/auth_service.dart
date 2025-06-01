@@ -1,151 +1,103 @@
+// auth_service.dart
 import 'dart:convert';
-import 'package:flutter/foundation.dart';
+import 'package:arebbus/config/app_config.dart';
+import 'package:arebbus/models/auth_response.dart';
+import 'package:flutter/material.dart' show debugPrint;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:http/http.dart' as http;
 
 class AuthService {
-  static const String _authDataKey = 'auth_data';
-  static const String _loginTimeKey = 'login_time';
-  
-  static AuthService? _instance;
-  static AuthService get instance => _instance ??= AuthService._();
-  
-  AuthService._();
-  
-  AuthResponse? _currentUser;
-  DateTime? _loginTime;
-  
-  AuthResponse? get currentUser => _currentUser;
-  bool get isLoggedIn => _currentUser != null;
-  String? get userId => _currentUser?.userId?.toString();
-  String? get username => _currentUser?.username;
-  String? get imageUrl => _currentUser?.imageUrl;
-  String? get token => _currentUser?.token;
-  
-  /// Initialize auth service and restore session if available
-  Future<void> initialize() async {
-    await _loadStoredAuthData();
-  }
-  
-  /// Store authentication data after successful login
-  Future<void> setAuthData(AuthResponse authResponse) async {
-    _currentUser = authResponse;
-    _loginTime = DateTime.now();
-    
-    await _saveAuthData();
-    debugPrint('Auth data stored for user: ${authResponse.username}');
-  }
-  
-  /// Clear authentication data on logout
-  Future<void> clearAuthData() async {
-    _currentUser = null;
-    _loginTime = null;
-    
+  static const String _tokenKey = 'auth_token';
+  static const String _userDataKey = 'user_data';
+  static final String _baseUrl = AppConfig.instance.apiBaseUrl; // Replace with your API URL
+
+  // Store authentication data
+  Future<void> saveAuthData(AuthResponse authResponse) async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.remove(_authDataKey);
-    await prefs.remove(_loginTimeKey);
-    
-    debugPrint('Auth data cleared');
+    await prefs.setString(_tokenKey, authResponse.token);
+    await prefs.setString(_userDataKey, jsonEncode(authResponse.toJson()));
   }
-  
-  /// Check if the session is still valid (you can add cookie expiration logic here)
-  bool isSessionValid() {
-    if (_currentUser == null || _loginTime == null) return false;
-    
-    // You can add additional session validation logic here
-    // For example, check if cookie has expired based on server response
-    // or implement a time-based session timeout
-    
-    return true;
-  }
-  
-  /// Save auth data to local storage
-  Future<void> _saveAuthData() async {
-    if (_currentUser == null) return;
-    
+
+  // Get stored token
+  Future<String?> getToken() async {
     final prefs = await SharedPreferences.getInstance();
-    final authDataJson = jsonEncode(_currentUser!.toJson());
-    
-    await prefs.setString(_authDataKey, authDataJson);
-    await prefs.setString(_loginTimeKey, _loginTime!.toIso8601String());
+    return prefs.getString(_tokenKey);
   }
-  
-  /// Load stored auth data from local storage
-  Future<void> _loadStoredAuthData() async {
+
+  // Get stored user data
+  Future<AuthResponse?> getUserData() async {
+    final prefs = await SharedPreferences.getInstance();
+    final userData = prefs.getString(_userDataKey);
+    if (userData != null) {
+      return AuthResponse.fromJson(jsonDecode(userData));
+    }
+    return null;
+  }
+
+  // Check if user is logged in
+  Future<bool> isLoggedIn() async {
+    final token = await getToken();
+    return token != null && token.isNotEmpty;
+  }
+
+  // Login method
+  Future<AuthResponse?> login(String username, String password) async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final authDataJson = prefs.getString(_authDataKey);
-      final loginTimeString = prefs.getString(_loginTimeKey);
-      
-      if (authDataJson != null && loginTimeString != null) {
-        final authDataMap = jsonDecode(authDataJson) as Map<String, dynamic>;
-        _currentUser = AuthResponse.fromJson(authDataMap);
-        _loginTime = DateTime.parse(loginTimeString);
+      final response = await http.post(
+        Uri.parse('$_baseUrl/login'), // Replace with your login endpoint
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'username': username,
+          'password': password,
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        final authResponse = AuthResponse.fromJson(jsonDecode(response.body));
         
-        debugPrint('Restored auth data for user: ${_currentUser!.username}');
+        if (authResponse.success) {
+          await saveAuthData(authResponse);
+          return authResponse;
+        }
       }
+      return null;
     } catch (e) {
-      debugPrint('Error loading stored auth data: $e');
-      await clearAuthData(); // Clear corrupted data
+      debugPrint('Login error: $e');
+      return null;
     }
   }
-  
-  /// Update user profile data (for profile updates)
-  Future<void> updateUserData({
-    String? username,
-    String? imageUrl,
-  }) async {
-    if (_currentUser == null) return;
-    
-    _currentUser = AuthResponse(
-      userId: _currentUser!.userId,
-      message: _currentUser!.message,
-      success: _currentUser!.success,
-      token: _currentUser!.token,
-      username: username ?? _currentUser!.username,
-      imageUrl: imageUrl ?? _currentUser!.imageUrl,
-    );
-    
-    await _saveAuthData();
-  }
-}
 
-/// Auth response model class
-class AuthResponse {
-  final int? userId;
-  final String? message;
-  final bool success;
-  final String? token;
-  final String? username;
-  final String? imageUrl;
-  
-  AuthResponse({
-    this.userId,
-    this.message,
-    required this.success,
-    this.token,
-    this.username,
-    this.imageUrl,
-  });
-  
-  factory AuthResponse.fromJson(Map<String, dynamic> json) {
-    return AuthResponse(
-      userId: json['userId'] as int?,
-      message: json['message'] as String?,
-      success: json['success'] as bool? ?? false,
-      token: json['token'] as String?,
-      username: json['username'] as String?,
-      imageUrl: json['imageUrl'] as String?,
+  // Logout method
+  Future<void> logout() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_tokenKey);
+    await prefs.remove(_userDataKey);
+  }
+
+  // Get authorization headers
+  Future<Map<String, String>> getAuthHeaders() async {
+    final token = await getToken();
+    return {
+      'Content-Type': 'application/json',
+      if (token != null) 'Authorization': 'Bearer $token',
+    };
+  }
+
+  // Make authenticated API calls
+  Future<http.Response> authenticatedGet(String endpoint) async {
+    final headers = await getAuthHeaders();
+    return await http.get(
+      Uri.parse('$_baseUrl$endpoint'),
+      headers: headers,
     );
   }
-  
-  Map<String, dynamic> toJson() {
-    return {
-      'userId': userId,
-      'message': message,
-      'success': success,
-      'token': token,
-      'username': username,
-      'imageUrl': imageUrl,
-    };
+
+  Future<http.Response> authenticatedPost(String endpoint, Map<String, dynamic> body) async {
+    final headers = await getAuthHeaders();
+    return await http.post(
+      Uri.parse('$_baseUrl$endpoint'),
+      headers: headers,
+      body: jsonEncode(body),
+    );
   }
 }

@@ -45,15 +45,12 @@ class _LoginScreenState extends State<LoginScreen> {
 
     if (!mounted) return;
 
-    final success = response['success'] == true;
-    final message = response['message'] ?? 'Unknown error';
-
-    if (success) {
+    if (response.success) {
       Navigator.pushReplacementNamed(context, '/home');
     } else {
-      _showErrorDialog(message);
+      _showErrorDialog(response.message);
     }
-
+    
     setState(() => _isLoading = false);
   }
 

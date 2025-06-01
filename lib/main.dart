@@ -1,8 +1,12 @@
+import 'package:arebbus/service/auth_provider.dart' show AuthProvider;
+import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:arebbus/screens/login_screen.dart';
 import 'package:arebbus/screens/register_screen.dart';
 import 'package:arebbus/screens/home_screen.dart';
 import 'package:arebbus/config/app_config.dart';
+import 'package:provider/provider.dart' show ChangeNotifierProvider, Consumer;
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -17,7 +21,14 @@ void main() async {
   //     ),
   //   );
   // }
-  runApp(const ArebbusApp());
+  
+  // FIX: Add runApp() here!
+  runApp(
+    ChangeNotifierProvider(
+      create: (context) => AuthProvider()..initAuth(),
+      child: ArebbusApp(),
+    ),
+  );
 }
 
 /// Route names used throughout the app
@@ -37,11 +48,39 @@ class ArebbusApp extends StatelessWidget {
       title: 'Arebbus New',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.buildTheme(),
-      initialRoute: AppRoutes.login,
+      home: AuthWrapper(), // Use AuthWrapper instead of initialRoute
       routes: {
         AppRoutes.login: (context) => const LoginScreen(),
         AppRoutes.register: (context) => const RegisterScreen(),
         AppRoutes.home: (context) => const HomeScreen(),
+      },
+    );
+  }
+}
+
+/// AuthWrapper to decide which screen to show based on auth status
+class AuthWrapper extends StatelessWidget {
+  const AuthWrapper({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Consumer<AuthProvider>(
+      builder: (context, authProvider, child) {
+        // Show loading screen while checking auth status
+        if (authProvider.isLoading) {
+          return const Scaffold(
+            body: Center(
+              child: CircularProgressIndicator(),
+            ),
+          );
+        }
+
+        // Show home screen if logged in, otherwise show login screen
+        if (authProvider.isLoggedIn) {
+          return const HomeScreen();
+        } else {
+          return const LoginScreen();
+        }
       },
     );
   }
