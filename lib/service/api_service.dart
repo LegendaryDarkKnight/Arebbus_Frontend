@@ -13,7 +13,7 @@ class ApiService {
   static const String _userDataKey = 'user_data';
 
   ApiService() {
-    _initializeDio(false);
+    _initializeDio();
   }
 
   void _enableInterceptors() {
@@ -50,7 +50,7 @@ class ApiService {
     );
   }
 
-  void _initializeDio(bool en) {
+  void _initializeDio() {
     _dio = Dio();
     _dio.options.baseUrl = _baseUrl;
     _dio.options.connectTimeout = const Duration(seconds: 10);
@@ -66,7 +66,6 @@ class ApiService {
       _dio.options.extra['withCredentials'] = true;
     }
 
-    // Always enable interceptors to handle auth
     _enableInterceptors();
 
     debugPrint(
@@ -180,6 +179,89 @@ class ApiService {
       );
     }
   }
+
+  // registration
+  Future<AuthResponse> registerUser(String name, String email, String password) async {
+    try {
+      final response = await _dio.post(
+        '/auth/register',
+        data: {
+          'name': name.trim(),
+          'email': email.trim(),
+          'password': password,
+        },
+        options: Options(
+          headers: {'Content-Type': 'application/json'},
+          extra: kIsWeb ? {'withCredentials': true} : null,
+        ),
+      );
+
+      final authResponse = AuthResponse.fromJson(response.data as Map<String, dynamic>);
+
+      if (authResponse.success) {
+        await saveAuthData(authResponse); // optional if you want to persist session
+      }
+      return authResponse;
+    } on DioException catch (e) {
+      return AuthResponse(
+        userId: 0,
+        message: _getErrorMessage(e),
+        success: false,
+        token: '',
+        username: '',
+      );
+    } catch (e) {
+      return AuthResponse(
+        userId: 0,
+        message: 'An unexpected error occurred.',
+        success: false,
+        token: '',
+        username: '',
+      );
+    }
+  }
+
+  String _getErrorMessage(DioException e) {
+    if (e.response == null) {
+      switch (e.type) {
+        case DioExceptionType.connectionTimeout:
+          return 'Connection timeout - Please check your network';
+        case DioExceptionType.connectionError:
+          return 'Cannot connect to server';
+        default:
+          return 'Registration failed';
+      }
+    }
+
+    final response = e.response!;
+    String errorMessage = 'Registration failed';
+
+    switch (response.statusCode) {
+      case 400:
+        errorMessage = 'Invalid registration data';
+        break;
+      case 409:
+        errorMessage = 'User already exists with this email';
+        break;
+      case 422:
+        errorMessage = 'Invalid input data';
+        break;
+      case 500:
+        errorMessage = 'Server error - Please try again later';
+        break;
+      default:
+        errorMessage = 'Registration failed - ${response.statusMessage}';
+    }
+
+    if (response.data is Map && response.data.containsKey('message')) {
+      errorMessage = response.data['message'].toString();
+    } else if (response.data is Map && response.data.containsKey('error')) {
+      errorMessage = response.data['error'].toString();
+    }
+
+    return errorMessage;
+  }
+
 
   // All other methods remain the same but will now automatically include Bearer token
   Future<Map<String, dynamic>> fetchPosts(int page, int size) async {
@@ -427,4 +509,6 @@ class ApiService {
       debugPrint('======================');
     }
   }
+
+
 }

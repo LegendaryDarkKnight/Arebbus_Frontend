@@ -1,3 +1,4 @@
+import 'package:arebbus/service/api_service.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
@@ -41,7 +42,7 @@ class FormValidator {
     if (value == null || value.isEmpty) {
       return 'Please enter your email';
     }
-    if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
+    if (!RegExp(r'^[\w-.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
       return 'Please enter a valid email';
     }
     return null;
@@ -105,12 +106,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
   bool _isLoading = false;
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
-  late final Dio _dio;
+  late final ApiService apiService;
 
   @override
   void initState() {
     super.initState();
-    _dio = ApiConfig.initializeDio();
+    apiService = ApiService();
   }
 
   Future<void> _register() async {
@@ -118,76 +119,21 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
     setState(() => _isLoading = true);
 
-    try {
-      final response = await _dio.post(
-        '/auth/register',
-        data: {
-          'name': _nameController.text.trim(),
-          'email': _emailController.text.trim(),
-          'password': _passwordController.text,
-        },
-      );
+    final response = await apiService.registerUser(
+      _nameController.text,
+      _emailController.text,
+      _passwordController.text,
+    );
 
-      if (response.statusCode == 201 || response.statusCode == 200) {
-        if (mounted) {
-          _showSuccessDialog();
-        }
-      }
-    } on DioException catch (e) {
-      String errorMessage = _getErrorMessage(e);
-      if (mounted) {
-        _showErrorDialog(errorMessage);
-      }
-    } catch (e) {
-      if (mounted) {
-        _showErrorDialog('An unexpected error occurred');
-      }
-    } finally {
-      if (mounted) {
-        setState(() => _isLoading = false);
-      }
+    if (!mounted) return;
+
+    setState(() => _isLoading = false);
+
+    if (response.success) {
+      _showSuccessDialog();
+    } else {
+      _showErrorDialog(response.message);
     }
-  }
-
-  String _getErrorMessage(DioException e) {
-    if (e.response == null) {
-      switch (e.type) {
-        case DioExceptionType.connectionTimeout:
-          return 'Connection timeout - Please check your network';
-        case DioExceptionType.connectionError:
-          return 'Cannot connect to server';
-        default:
-          return 'Registration failed';
-      }
-    }
-
-    final response = e.response!;
-    String errorMessage = 'Registration failed';
-    
-    switch (response.statusCode) {
-      case 400:
-        errorMessage = 'Invalid registration data';
-        break;
-      case 409:
-        errorMessage = 'User already exists with this email';
-        break;
-      case 422:
-        errorMessage = 'Invalid input data';
-        break;
-      case 500:
-        errorMessage = 'Server error - Please try again later';
-        break;
-      default:
-        errorMessage = 'Registration failed - ${response.statusMessage}';
-    }
-
-    if (response.data is Map && response.data.containsKey('message')) {
-      errorMessage = response.data['message'].toString();
-    } else if (response.data is Map && response.data.containsKey('error')) {
-      errorMessage = response.data['error'].toString();
-    }
-
-    return errorMessage;
   }
 
   void _showSuccessDialog() {
@@ -201,7 +147,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
           TextButton(
             onPressed: () {
               Navigator.pop(context); // Close dialog
-              Navigator.pop(context); // Go back to login screen
+              Navigator.pushNamed(context,'/'); // Go back to login screen
             },
             child: const Text('OK'),
           ),

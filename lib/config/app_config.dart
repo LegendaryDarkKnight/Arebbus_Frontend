@@ -28,7 +28,7 @@ class AppConfig {
     required this.featureFlagNewProfile,
   });
 
-  static Future<void> initialize() async {
+  static Future<void>  initialize() async {
     final contents = await rootBundle.loadString('assets/config/env.json');
     final json = jsonDecode(contents);
 
@@ -45,6 +45,34 @@ class AppConfig {
       featureFlagNewProfile: json['FEATURE_FLAG_NEW_PROFILE'] ?? false,
     );
   }
+
+  static Future<void> initializeFromEnv() async {
+    const apiBaseUrl = String.fromEnvironment("API_BASE_URL", defaultValue: "http://localhost:6996");
+    const apiKey = String.fromEnvironment("apiKey", defaultValue: "dev-api-key");
+    const authDomain = String.fromEnvironment("AUTH_DOMAIN", defaultValue: "localhost-auth");
+    const projectId = String.fromEnvironment("PROJECT_ID", defaultValue: "dev-project");
+    const storageBucket = String.fromEnvironment("STORAGE_BUCKET", defaultValue: "dev-bucket");
+    const messagingSenderId = String.fromEnvironment("MESSAGING_SENDER_ID", defaultValue: "1234567890");
+    const appId = String.fromEnvironment("APP_ID", defaultValue: "1:1234567890:web:abcdef123456");
+    const measurementId = String.fromEnvironment("MEASUREMENT_ID", defaultValue: "G-DEV1234");
+    const environmentName = String.fromEnvironment("ENVIRONMENT_NAME", defaultValue: "development");
+    const featureFlagNewProfile = bool.fromEnvironment("FEATURE_FLAG_NEW_PROFILE", defaultValue: false);
+
+    _instance = AppConfig._internal(
+      apiBaseUrl: apiBaseUrl,
+      apiKey: apiKey,
+      authDomain: authDomain,
+      projectId: projectId,
+      storageBucket: storageBucket,
+      messagingSenderId: messagingSenderId,
+      appId: appId,
+      measurementId: measurementId,
+      environmentName: environmentName,
+      featureFlagNewProfile: featureFlagNewProfile,
+    );
+  }
+
+
 
   static AppConfig get instance => _instance;
 }
