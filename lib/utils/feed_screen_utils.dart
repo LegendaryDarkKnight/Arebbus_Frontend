@@ -6,11 +6,6 @@ import 'package:arebbus/service/api_service.dart';
 import 'package:flutter/foundation.dart';
 
 class FeedScreenUtils {
-  late ApiService _apiService;
-
-  FeedScreenUtils(){
-    _apiService = ApiService();
-  }
   
   List<String> getDefaultTags() {
     return const [
@@ -136,7 +131,7 @@ class FeedScreenUtils {
       
       debugPrint("Loading posts - Page: $requestPage, PageSize: $pageSize, IsRefresh: $isRefresh");
       
-      final data = await _apiService.fetchPosts(requestPage, pageSize);
+      final data = await ApiService.instance.fetchPosts(requestPage, pageSize);
       
       // debugPrint("API Response: $data");
       
@@ -189,7 +184,7 @@ class FeedScreenUtils {
       
       debugPrint("Loading more posts - NextPage: $nextPage, PageSize: $pageSize");
       
-      final data = await _apiService.fetchPosts(nextPage, pageSize);
+      final data = await ApiService.instance.fetchPosts(nextPage, pageSize);
       
       
       debugPrint("Load more API Response: $data");
@@ -395,7 +390,7 @@ class FeedScreenUtils {
       
       debugPrint("Creating post with content: $trimmedContent, tags: $cleanTagNames");
       
-      final data = await _apiService.createPost(trimmedContent, cleanTagNames);
+      final data = await ApiService.instance.createPost(trimmedContent, cleanTagNames);
       
       final newPost = Post(
         id: data['postId']?.toInt() ?? DateTime.now().millisecondsSinceEpoch,

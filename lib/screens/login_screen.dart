@@ -16,15 +16,9 @@ class _LoginScreenState extends State<LoginScreen> {
 
   bool _isLoading = false;
   bool _obscurePassword = true;
-  late final ApiService _apiService;
 
   static final _emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
 
-  @override
-  void initState() {
-    super.initState();
-    _apiService = ApiService();
-  }
 
   @override
   void dispose() {
@@ -38,7 +32,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
     setState(() => _isLoading = true);
 
-    final response = await _apiService.loginUser(
+    final response = await ApiService.instance.loginUser(
       _emailController.text.trim(),
       _passwordController.text,
     );

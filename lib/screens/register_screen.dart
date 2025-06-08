@@ -106,12 +106,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
   bool _isLoading = false;
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
-  late final ApiService apiService;
 
   @override
   void initState() {
     super.initState();
-    apiService = ApiService();
   }
 
   Future<void> _register() async {
@@ -119,7 +117,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
     setState(() => _isLoading = true);
 
-    final response = await apiService.registerUser(
+    final response = await ApiService.instance.registerUser(
       _nameController.text,
       _emailController.text,
       _passwordController.text,

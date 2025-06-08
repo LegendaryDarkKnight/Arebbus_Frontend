@@ -55,7 +55,7 @@ class AppConfig {
     const messagingSenderId = String.fromEnvironment("MESSAGING_SENDER_ID", defaultValue: "1234567890");
     const appId = String.fromEnvironment("APP_ID", defaultValue: "1:1234567890:web:abcdef123456");
     const measurementId = String.fromEnvironment("MEASUREMENT_ID", defaultValue: "G-DEV1234");
-    const environmentName = String.fromEnvironment("ENVIRONMENT_NAME", defaultValue: "development");
+    const environmentName = String.fromEnvironment("ENVIRONMENT_NAME", defaultValue: "debug");
     const featureFlagNewProfile = bool.fromEnvironment("FEATURE_FLAG_NEW_PROFILE", defaultValue: false);
 
     _instance = AppConfig._internal(
@@ -71,8 +71,6 @@ class AppConfig {
       featureFlagNewProfile: featureFlagNewProfile,
     );
   }
-
-
 
   static AppConfig get instance => _instance;
 }

@@ -7,14 +7,17 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 
 class ApiService {
+  static final ApiService _instance = ApiService._internal();
   late Dio _dio;
   static final String _baseUrl = AppConfig.instance.apiBaseUrl;
   static const String _tokenKey = 'auth_token';
   static const String _userDataKey = 'user_data';
 
-  ApiService() {
+  ApiService._internal(){
     _initializeDio();
   }
+
+  static ApiService get instance => _instance;
 
   void _enableInterceptors() {
     _dio.interceptors.add(
@@ -43,7 +46,6 @@ class ApiService {
             // You might want to navigate to login screen here
             // or emit an event that the auth provider can listen to
           }
-
           handler.next(error);
         },
       ),
@@ -105,7 +107,6 @@ class ApiService {
     await prefs.remove(_userDataKey);
   }
 
-  // Updated login method to return AuthResponse
   Future<AuthResponse> loginUser(String email, String password) async {
     try {
       final response = await _dio.post(
@@ -180,7 +181,6 @@ class ApiService {
     }
   }
 
-  // registration
   Future<AuthResponse> registerUser(String name, String email, String password) async {
     try {
       final response = await _dio.post(
@@ -262,8 +262,6 @@ class ApiService {
     return errorMessage;
   }
 
-
-  // All other methods remain the same but will now automatically include Bearer token
   Future<Map<String, dynamic>> fetchPosts(int page, int size) async {
     try {
       final response = await _dio.get(
@@ -312,10 +310,7 @@ class ApiService {
     }
   }
 
-  Future<Map<String, dynamic>> createPost(
-    String content,
-    List<String> tags,
-  ) async {
+  Future<Map<String, dynamic>> createPost(String content, List<String> tags) async {
     try {
       debugPrint('Creating post with content: $content and tags: $tags');
       debugPrint('Making request to: ${_dio.options.baseUrl}/post/create');
@@ -471,9 +466,7 @@ class ApiService {
       throw Exception('Failed to load post: ${e.message}');
     }
   }
-  // Add these debug methods to your ApiService class
 
-  // Debug method to print all stored auth data
   Future<void> debugPrintStoredAuth() async {
     if (kDebugMode) {
       final token = await getToken();
@@ -488,7 +481,6 @@ class ApiService {
     }
   }
 
-  // Debug method to clear all auth storage
   Future<void> debugClearAllAuth() async {
     if (kDebugMode) {
       await logout();
@@ -496,7 +488,6 @@ class ApiService {
     }
   }
 
-  // Debug method to inspect all SharedPreferences keys (web localStorage)
   Future<void> debugPrintAllStoredKeys() async {
     if (kDebugMode && kIsWeb) {
       final prefs = await SharedPreferences.getInstance();
@@ -509,6 +500,5 @@ class ApiService {
       debugPrint('======================');
     }
   }
-
 
 }

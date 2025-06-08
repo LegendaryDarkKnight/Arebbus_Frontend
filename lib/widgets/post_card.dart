@@ -163,8 +163,7 @@ class _PostCardState extends State<PostCard> {
 
     setState(() => _isLoadingComments = true);
     try {
-      final apiService = ApiService();
-      final data = await apiService.getPostById(postId);
+      final data = await ApiService.instance.getPostById(postId);
       final commentsData = data?['comments'] as List<dynamic>? ?? [];
       setState(() {
         _comments = PostCardUtils.parseComments(commentsData);

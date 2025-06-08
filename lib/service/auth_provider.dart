@@ -3,7 +3,6 @@ import 'package:arebbus/service/api_service.dart' show ApiService;
 import 'package:flutter/foundation.dart';
 
 class AuthProvider with ChangeNotifier {
-  final ApiService _apiService = ApiService();
   AuthResponse? _currentUser;
   bool _isLoading = false;
 
@@ -17,8 +16,8 @@ class AuthProvider with ChangeNotifier {
     notifyListeners();
 
     try {
-      if (await _apiService.isLoggedIn()) {
-        _currentUser = await _apiService.getUserData();
+      if (await ApiService.instance.isLoggedIn()) {
+        _currentUser = await ApiService.instance.getUserData();
       }
     } catch (e) {
       debugPrint('Auth initialization error: $e');
@@ -34,7 +33,7 @@ class AuthProvider with ChangeNotifier {
     notifyListeners();
 
     try {
-      final authResponse = await _apiService.loginUser(email, password);
+      final authResponse = await ApiService.instance.loginUser(email, password);
       if (authResponse.success) {
         _currentUser = authResponse;
         _isLoading = false;
@@ -56,7 +55,7 @@ class AuthProvider with ChangeNotifier {
 
   // Logout
   Future<void> logout() async {
-    await _apiService.logout();
+    await ApiService.instance.logout();
     _currentUser = null;
     notifyListeners();
   }

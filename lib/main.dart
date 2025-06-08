@@ -1,6 +1,4 @@
 import 'package:arebbus/service/auth_provider.dart' show AuthProvider;
-import 'package:firebase_core/firebase_core.dart';
-import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:arebbus/screens/login_screen.dart';
 import 'package:arebbus/screens/register_screen.dart';
@@ -11,18 +9,6 @@ import 'package:provider/provider.dart' show ChangeNotifierProvider, Consumer;
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await AppConfig.initialize();
-  // if (kIsWeb) {
-  //   await Firebase.initializeApp(
-  //     options: FirebaseOptions(
-  //       apiKey: AppConfig.instance.apiKey,
-  //       appId: AppConfig.instance.appId,
-  //       messagingSenderId: AppConfig.instance.messagingSenderId,
-  //       projectId: AppConfig.instance.projectId,
-  //     ),
-  //   );
-  // }
-  
-  // FIX: Add runApp() here!
   runApp(
     ChangeNotifierProvider(
       create: (context) => AuthProvider()..initAuth(),
