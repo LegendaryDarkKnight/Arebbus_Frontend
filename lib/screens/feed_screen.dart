@@ -140,13 +140,14 @@ class _FeedScreenState extends State<FeedScreen> with TickerProviderStateMixin{
   }
 
   // Post Actions
-  void _upvotePost(int? postId) {
+  Future<void> _upvotePost(int? postId) async{
     if (postId == null) return;
     
-    final result = _feedScreenUtils.upvotePost(
+    final result = await _feedScreenUtils.upvotePost(
       posts: _posts,
       filteredPosts: _filteredPosts,
       postId: postId,
+      onErrorReload: ()=> _loadPosts(isRefresh: true),
     );
 
     setState(() {

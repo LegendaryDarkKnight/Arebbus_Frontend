@@ -6,7 +6,6 @@ import 'package:arebbus/service/api_service.dart';
 import 'package:flutter/foundation.dart';
 
 class FeedScreenUtils {
-  
   List<String> getDefaultTags() {
     return const [
       'Congestion',
@@ -29,16 +28,18 @@ class FeedScreenUtils {
       debugPrint("Expected List but got: ${rawPosts.runtimeType}");
       return [];
     }
-    
+
     try {
       return rawPosts.map<Post>((postData) {
         // if (postData is! Map<String, dynamic>) {
         //   debugPrint("Invalid post data format: $postData");
         //   return [];
         // }
-        
+
         return Post(
-          id: postData['postId']?.toInt() ?? DateTime.now().millisecondsSinceEpoch,
+          id:
+              postData['postId']?.toInt() ??
+              DateTime.now().millisecondsSinceEpoch,
           content: postData['content']?.toString() ?? '',
           numUpvote: postData['numUpvote']?.toInt() ?? 0,
           timestamp: _parseDateTime(postData['createdAt']),
@@ -48,6 +49,7 @@ class FeedScreenUtils {
             name: postData['authorName']?.toString() ?? 'Anonymous',
             image: 'https://picsum.photos/seed/picsum/200/300',
           ),
+          upvoted: postData['upvoted'],
         );
       }).toList();
     } catch (e) {
@@ -58,7 +60,7 @@ class FeedScreenUtils {
 
   DateTime _parseDateTime(dynamic dateTime) {
     if (dateTime == null) return DateTime.now();
-    
+
     try {
       if (dateTime is String) {
         return DateTime.parse(dateTime);
@@ -72,7 +74,7 @@ class FeedScreenUtils {
 
   List<Tag> _parseTags(dynamic tags) {
     if (tags is! List) return [];
-    
+
     try {
       return tags
           .map<Tag?>((tagData) {
@@ -91,14 +93,16 @@ class FeedScreenUtils {
 
   List<Comment> _parseComments(dynamic comments) {
     if (comments is! List) return [];
-    
+
     try {
       return comments
           .map<Comment?>((commentData) {
             if (commentData is! Map<String, dynamic>) return null;
-            
+
             return Comment(
-              id: commentData['id']?.toInt() ?? DateTime.now().millisecondsSinceEpoch,
+              id:
+                  commentData['id']?.toInt() ??
+                  DateTime.now().millisecondsSinceEpoch,
               content: commentData['content']?.toString() ?? '',
               postId: commentData['postId']?.toInt() ?? 0,
               numUpvote: commentData['numUpvote']?.toInt() ?? 0,
@@ -128,17 +132,19 @@ class FeedScreenUtils {
     try {
       // For refresh, always start from page 0
       final requestPage = isRefresh ? 0 : currentPage;
-      
-      debugPrint("Loading posts - Page: $requestPage, PageSize: $pageSize, IsRefresh: $isRefresh");
-      
+
+      debugPrint(
+        "Loading posts - Page: $requestPage, PageSize: $pageSize, IsRefresh: $isRefresh",
+      );
+
       final data = await ApiService.instance.fetchPosts(requestPage, pageSize);
-      
+
       // debugPrint("API Response: $data");
-      
+
       final fetchedPosts = _parsePosts(data['posts']);
       final newCurrentPage = data['page']?.toInt() ?? requestPage;
       final totalPages = data['totalPages']?.toInt() ?? 1;
-      
+
       // Handle post merging correctly
       List<Post> resultPosts;
       if (isRefresh) {
@@ -146,12 +152,15 @@ class FeedScreenUtils {
       } else {
         // Merge with existing posts, avoiding duplicates
         final existingIds = existingPosts.map((p) => p.id).toSet();
-        final newPosts = fetchedPosts.where((p) => !existingIds.contains(p.id)).toList();
+        final newPosts =
+            fetchedPosts.where((p) => !existingIds.contains(p.id)).toList();
         resultPosts = [...existingPosts, ...newPosts];
       }
-      
-      debugPrint("Successfully loaded ${fetchedPosts.length} posts. Total posts: ${resultPosts.length}");
-      
+
+      debugPrint(
+        "Successfully loaded ${fetchedPosts.length} posts. Total posts: ${resultPosts.length}",
+      );
+
       return {
         'posts': resultPosts,
         'currentPage': newCurrentPage,
@@ -161,7 +170,7 @@ class FeedScreenUtils {
       };
     } catch (e) {
       debugPrint("Error loading posts: $e");
-      
+
       // Return existing posts with error info
       return {
         'posts': existingPosts,
@@ -181,25 +190,29 @@ class FeedScreenUtils {
     try {
       // Request the next page
       final nextPage = currentPage + 1;
-      
-      debugPrint("Loading more posts - NextPage: $nextPage, PageSize: $pageSize");
-      
+
+      debugPrint(
+        "Loading more posts - NextPage: $nextPage, PageSize: $pageSize",
+      );
+
       final data = await ApiService.instance.fetchPosts(nextPage, pageSize);
-      
-      
+
       debugPrint("Load more API Response: $data");
-      
+
       final fetchedPosts = _parsePosts(data['posts']);
       final newCurrentPage = data['page']?.toInt() ?? nextPage;
       final totalPages = data['totalPages']?.toInt() ?? currentPage + 1;
-      
+
       // Merge posts, avoiding duplicates
       final existingIds = existingPosts.map((p) => p.id).toSet();
-      final newPosts = fetchedPosts.where((p) => !existingIds.contains(p.id)).toList();
+      final newPosts =
+          fetchedPosts.where((p) => !existingIds.contains(p.id)).toList();
       final resultPosts = [...existingPosts, ...newPosts];
-      
-      debugPrint("Successfully loaded ${newPosts.length} new posts. Total posts: ${resultPosts.length}");
-      
+
+      debugPrint(
+        "Successfully loaded ${newPosts.length} new posts. Total posts: ${resultPosts.length}",
+      );
+
       return {
         'posts': resultPosts,
         'currentPage': newCurrentPage,
@@ -209,7 +222,7 @@ class FeedScreenUtils {
       };
     } catch (e) {
       debugPrint("Error loading more posts: $e");
-      
+
       // Return existing posts with error info
       return {
         'posts': existingPosts,
@@ -223,7 +236,7 @@ class FeedScreenUtils {
 
   String _formatError(dynamic error) {
     final errorString = error.toString();
-    return errorString.length > 100 
+    return errorString.length > 100
         ? "${errorString.substring(0, 100)}..."
         : errorString;
   }
@@ -231,7 +244,7 @@ class FeedScreenUtils {
   List<String> getAvailableFilterTags(List<Post> posts) {
     final defaultTags = getDefaultTags();
     final allPostTags = <String>{};
-    
+
     for (var post in posts) {
       post.tags?.forEach((tag) {
         final tagName = tag.name.trim();
@@ -240,21 +253,21 @@ class FeedScreenUtils {
         }
       });
     }
-    
+
     // Combine all tags and remove duplicates
     final allTags = <String>{
       'All',
       ...defaultTags,
       ...allPostTags.where((tag) => !defaultTags.contains(tag) && tag != 'All'),
     };
-    
+
     final sortedTags = allTags.toList();
     sortedTags.sort((a, b) {
       if (a == "All") return -1;
       if (b == "All") return 1;
       return a.compareTo(b);
     });
-    
+
     return sortedTags;
   }
 
@@ -268,19 +281,25 @@ class FeedScreenUtils {
 
     // Apply tag filter
     if (selectedTagFilter != 'All') {
-      filteredPosts = filteredPosts.where((post) {
-        return post.tags?.any((tag) => tag.name == selectedTagFilter) ?? false;
-      }).toList();
+      filteredPosts =
+          filteredPosts.where((post) {
+            return post.tags?.any((tag) => tag.name == selectedTagFilter) ??
+                false;
+          }).toList();
     }
 
     // Apply search query
     if (searchQuery.isNotEmpty) {
       final query = searchQuery.toLowerCase().trim();
-      filteredPosts = filteredPosts.where((post) {
-        return post.content.toLowerCase().contains(query) ||
-            (post.author?.name.toLowerCase().contains(query) ?? false) ||
-            (post.tags?.any((tag) => tag.name.toLowerCase().contains(query)) ?? false);
-      }).toList();
+      filteredPosts =
+          filteredPosts.where((post) {
+            return post.content.toLowerCase().contains(query) ||
+                (post.author?.name.toLowerCase().contains(query) ?? false) ||
+                (post.tags?.any(
+                      (tag) => tag.name.toLowerCase().contains(query),
+                    ) ??
+                    false);
+          }).toList();
     }
 
     // Apply sorting
@@ -300,33 +319,61 @@ class FeedScreenUtils {
     return filteredPosts;
   }
 
-  Map<String, List<Post>> upvotePost({
+  Future<Map<String, List<Post>>> upvotePost({
     required List<Post> posts,
     required List<Post> filteredPosts,
     required int? postId,
-  }) {
+    required VoidCallback onErrorReload, // Call this on failure
+  }) async {
     if (postId == null) {
       return {'posts': posts, 'filteredPosts': filteredPosts};
     }
 
-    final updatedPosts = posts.map((post) {
-      if (post.id == postId) {
-        return post.copyWith(numUpvote: post.numUpvote + 1);
-      }
-      return post;
-    }).toList();
+    // Optimistically update the UI first
+    late bool newUpvoteStatus;
+    late List<Post> updatedPosts;
+    late List<Post> updatedFilteredPosts;
 
-    final updatedFilteredPosts = filteredPosts.map((post) {
-      if (post.id == postId) {
-        return post.copyWith(numUpvote: post.numUpvote + 1);
-      }
-      return post;
-    }).toList();
+    updatedPosts =
+        posts.map((post) {
+          if (post.id == postId) {
+            final isUpvoted = post.upvoted ?? false;
+            newUpvoteStatus = !isUpvoted;
+            return post.copyWith(
+              numUpvote: isUpvoted ? post.numUpvote - 1 : post.numUpvote + 1,
+              upvoted: newUpvoteStatus,
+            );
+          }
+          return post;
+        }).toList();
 
-    return {
-      'posts': updatedPosts, 
-      'filteredPosts': updatedFilteredPosts
-    };
+    updatedFilteredPosts =
+        filteredPosts.map((post) {
+          if (post.id == postId) {
+            final isUpvoted = post.upvoted ?? false;
+            return post.copyWith(
+              numUpvote: isUpvoted ? post.numUpvote - 1 : post.numUpvote + 1,
+              upvoted: !isUpvoted,
+            );
+          }
+          return post;
+        }).toList();
+
+    // Now make the API call
+    try {
+      final result = await ApiService.instance.togglePostUpvote(postId);
+
+      // Optional: you can verify server response with optimistic update
+      final bool serverUpvoteStatus = result['upvoteStatus'] ?? false;
+      if (serverUpvoteStatus != newUpvoteStatus) {
+        debugPrint('Mismatch with server state, consider sync handling');
+      }
+    } catch (e) {
+      debugPrint('Error during upvote toggle: $e');
+      onErrorReload(); // Trigger reload and show alert in UI
+    }
+
+    return {'posts': updatedPosts, 'filteredPosts': updatedFilteredPosts};
   }
 
   Map<String, List<Post>> addComment({
@@ -352,26 +399,25 @@ class FeedScreenUtils {
       ),
     );
 
-    final updatedPosts = posts.map((post) {
-      if (post.id == postId) {
-        final updatedComments = [...?post.comments, newComment];
-        return post.copyWith(comments: updatedComments);
-      }
-      return post;
-    }).toList();
+    final updatedPosts =
+        posts.map((post) {
+          if (post.id == postId) {
+            final updatedComments = [...?post.comments, newComment];
+            return post.copyWith(comments: updatedComments);
+          }
+          return post;
+        }).toList();
 
-    final updatedFilteredPosts = filteredPosts.map((post) {
-      if (post.id == postId) {
-        final updatedComments = [...?post.comments, newComment];
-        return post.copyWith(comments: updatedComments);
-      }
-      return post;
-    }).toList();
+    final updatedFilteredPosts =
+        filteredPosts.map((post) {
+          if (post.id == postId) {
+            final updatedComments = [...?post.comments, newComment];
+            return post.copyWith(comments: updatedComments);
+          }
+          return post;
+        }).toList();
 
-    return {
-      'posts': updatedPosts, 
-      'filteredPosts': updatedFilteredPosts
-    };
+    return {'posts': updatedPosts, 'filteredPosts': updatedFilteredPosts};
   }
 
   Future<Map<String, dynamic>> addPost({
@@ -382,16 +428,25 @@ class FeedScreenUtils {
   }) async {
     try {
       final trimmedContent = content.trim();
-      final cleanTagNames = tagNames.map((tag) => tag.trim()).where((tag) => tag.isNotEmpty).toList();
-      
+      final cleanTagNames =
+          tagNames
+              .map((tag) => tag.trim())
+              .where((tag) => tag.isNotEmpty)
+              .toList();
+
       if (trimmedContent.isEmpty) {
         throw Exception('Post content cannot be empty');
       }
-      
-      debugPrint("Creating post with content: $trimmedContent, tags: $cleanTagNames");
-      
-      final data = await ApiService.instance.createPost(trimmedContent, cleanTagNames);
-      
+
+      debugPrint(
+        "Creating post with content: $trimmedContent, tags: $cleanTagNames",
+      );
+
+      final data = await ApiService.instance.createPost(
+        trimmedContent,
+        cleanTagNames,
+      );
+
       final newPost = Post(
         id: data['postId']?.toInt() ?? DateTime.now().millisecondsSinceEpoch,
         content: trimmedContent,
@@ -408,14 +463,14 @@ class FeedScreenUtils {
       // Update available filter tags
       final updatedTags = Set<String>.from(availableFilterTags);
       bool newTagsAdded = false;
-      
+
       for (String tagName in cleanTagNames) {
         if (!updatedTags.contains(tagName)) {
           updatedTags.add(tagName);
           newTagsAdded = true;
         }
       }
-      
+
       List<String> sortedTags = updatedTags.toList();
       if (newTagsAdded) {
         sortedTags.sort((a, b) {
@@ -443,7 +498,7 @@ class FeedScreenUtils {
     required String searchQuery,
   }) {
     List<String> activeFilters = [];
-    
+
     if (selectedTagFilter != 'All') {
       activeFilters.add('Tag: $selectedTagFilter');
     }
@@ -453,7 +508,7 @@ class FeedScreenUtils {
     if (searchQuery.trim().isNotEmpty) {
       activeFilters.add('Search: "${searchQuery.trim()}"');
     }
-    
+
     return activeFilters.isEmpty
         ? 'No active filters'
         : activeFilters.join(' • ');

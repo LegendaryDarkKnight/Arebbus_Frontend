@@ -33,8 +33,8 @@ class PostCardUtils {
     final defaultAppearance = TagAppearance(
       chipBackgroundColor: theme.colorScheme.surfaceContainerHighest,
       chipForegroundColor: theme.colorScheme.onSurfaceVariant,
-      iconData: FontAwesomeIcons.infoCircle,
-      cardAccentColor: theme.colorScheme.outline.withOpacity(0.5),
+      iconData: FontAwesomeIcons.circleInfo,
+      cardAccentColor: theme.colorScheme.outline.withValues(alpha: 0.5),
     );
 
     if (tagName == null) return defaultAppearance;
@@ -217,7 +217,7 @@ class _PostCardState extends State<PostCard> {
       elevation: PostCardConstants.cardElevation,
       shape: RoundedRectangleBorder(
         side: BorderSide(
-          color: tagAppearance.cardAccentColor.withOpacity(0.7),
+          color: tagAppearance.cardAccentColor.withValues(alpha: 0.7),
           width: 1,
         ),
         borderRadius: BorderRadius.circular(PostCardConstants.borderRadius),
@@ -379,7 +379,7 @@ class _PostCardState extends State<PostCard> {
       children: [
         _buildInteractionButton(
           theme: theme,
-          icon: FontAwesomeIcons.solidThumbsUp,
+          icon:  (widget.post.upvoted ?? false) ? FontAwesomeIcons.solidThumbsUp : FontAwesomeIcons.thumbsUp,
           label: '${widget.post.numUpvote}',
           onPressed: widget.onUpvote,
           color: theme.colorScheme.primary,

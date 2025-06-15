@@ -467,6 +467,188 @@ class ApiService {
     }
   }
 
+  // Add these functions to your API service class
+
+  Future<Map<String, dynamic>> togglePostUpvote(int postId) async {
+    try {
+      debugPrint('Toggling upvote for post ID: $postId');
+      debugPrint('Making request to: ${_dio.options.baseUrl}/upvote/post');
+
+      final response = await _dio.post(
+        '/upvote/post',
+        data: {'id': postId},
+        options: Options(
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+          },
+          extra: kIsWeb ? {'withCredentials': true} : null,
+          sendTimeout: const Duration(seconds: 10),
+          receiveTimeout: const Duration(seconds: 10),
+        ),
+      );
+
+      debugPrint('Response status: ${response.statusCode}');
+      debugPrint('Response data: ${response.data}');
+
+      if (response.statusCode == 200) {
+        return response.data as Map<String, dynamic>;
+      } else {
+        throw DioException(
+          requestOptions: response.requestOptions,
+          response: response,
+          error: 'Failed to toggle post upvote: Status code ${response.statusCode}',
+        );
+      }
+    } on DioException catch (e) {
+      debugPrint('DioException toggling post upvote: ${e.message}');
+      debugPrint('DioException type: ${e.type}');
+      debugPrint('DioException response: ${e.response?.data}');
+
+      switch (e.type) {
+        case DioExceptionType.connectionTimeout:
+          throw Exception(
+            'Connection timeout - please check your internet connection',
+          );
+        case DioExceptionType.sendTimeout:
+          throw Exception('Request timeout - please try again');
+        case DioExceptionType.receiveTimeout:
+          throw Exception('Server response timeout - please try again');
+        case DioExceptionType.connectionError:
+          throw Exception(
+            'Network connection error - please check if the server is running and CORS is configured',
+          );
+        case DioExceptionType.badResponse:
+          final statusCode = e.response?.statusCode;
+          final responseData = e.response?.data;
+
+          if (statusCode == 401) {
+            throw Exception('Authentication required - please log in');
+          } else if (statusCode == 403) {
+            throw Exception('You do not have permission to upvote this post');
+          } else if (statusCode == 404) {
+            throw Exception('Post not found');
+          } else {
+            throw Exception('Server error: $statusCode - $responseData');
+          }
+        default:
+          throw Exception('Failed to toggle post upvote: ${e.message}');
+      }
+    } catch (e) {
+      debugPrint('Generic error toggling post upvote: $e');
+      throw Exception('An unexpected error occurred: ${e.toString()}');
+    }
+  }
+
+  Future<Map<String, dynamic>> toggleCommentUpvote(String commentId) async {
+    try {
+      debugPrint('Toggling upvote for comment ID: $commentId');
+      debugPrint('Making request to: ${_dio.options.baseUrl}/upvote/comment');
+
+      final response = await _dio.post(
+        '/upvote/comment',
+        data: {'id': commentId},
+        options: Options(
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+          },
+          extra: kIsWeb ? {'withCredentials': true} : null,
+          sendTimeout: const Duration(seconds: 10),
+          receiveTimeout: const Duration(seconds: 10),
+        ),
+      );
+
+      debugPrint('Response status: ${response.statusCode}');
+      debugPrint('Response data: ${response.data}');
+
+      if (response.statusCode == 200) {
+        return response.data as Map<String, dynamic>;
+      } else {
+        throw DioException(
+          requestOptions: response.requestOptions,
+          response: response,
+          error: 'Failed to toggle comment upvote: Status code ${response.statusCode}',
+        );
+      }
+    } on DioException catch (e) {
+      debugPrint('DioException toggling comment upvote: ${e.message}');
+      debugPrint('DioException type: ${e.type}');
+      debugPrint('DioException response: ${e.response?.data}');
+
+      switch (e.type) {
+        case DioExceptionType.connectionTimeout:
+          throw Exception(
+            'Connection timeout - please check your internet connection',
+          );
+        case DioExceptionType.sendTimeout:
+          throw Exception('Request timeout - please try again');
+        case DioExceptionType.receiveTimeout:
+          throw Exception('Server response timeout - please try again');
+        case DioExceptionType.connectionError:
+          throw Exception(
+            'Network connection error - please check if the server is running and CORS is configured',
+          );
+        case DioExceptionType.badResponse:
+          final statusCode = e.response?.statusCode;
+          final responseData = e.response?.data;
+
+          if (statusCode == 401) {
+            throw Exception('Authentication required - please log in');
+          } else if (statusCode == 403) {
+            throw Exception('You do not have permission to upvote this comment');
+          } else if (statusCode == 404) {
+            throw Exception('Comment not found');
+          } else {
+            throw Exception('Server error: $statusCode - $responseData');
+          }
+        default:
+          throw Exception('Failed to toggle comment upvote: ${e.message}');
+      }
+    } catch (e) {
+      debugPrint('Generic error toggling comment upvote: $e');
+      throw Exception('An unexpected error occurred: ${e.toString()}');
+    }
+  }
+
+  Map<String, dynamic> parseUpvoteResponse(Map<String, dynamic> responseData) {
+    return {
+      'upvoted': responseData['upvoteStatus'],
+      'toggledAt': responseData['toggledAt'],
+    };
+  }
+
+
+// Usage examples:
+
+// For toggling post upvote:
+// try {
+//   final result = await togglePostUpvote('post-id-123');
+//   final parsedResult = parseUpvoteResponse(result);
+//
+//   if (parsedResult['success']) {
+//     print('Post upvote toggled successfully');
+//     print('Is upvoted: ${parsedResult['upvoted']}');
+//     print('Total upvotes: ${parsedResult['upvoteCount']}');
+//   }
+// } catch (e) {
+//   print('Error: $e');
+// }
+
+// For toggling comment upvote:
+// try {
+//   final result = await toggleCommentUpvote('comment-id-456');
+//   final parsedResult = parseUpvoteResponse(result);
+//
+//   if (parsedResult['success']) {
+//     print('Comment upvote toggled successfully');
+//     print('Is upvoted: ${parsedResult['upvoted']}');
+//     print('Total upvotes: ${parsedResult['upvoteCount']}');
+//   }
+// } catch (e) {
+//   print('Error: $e');
+// }
+
   Future<void> debugPrintStoredAuth() async {
     if (kDebugMode) {
       final token = await getToken();

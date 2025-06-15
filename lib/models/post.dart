@@ -11,6 +11,7 @@ class Post {
   final User? author;
   final List<Tag>? tags;
   final List<Comment>? comments;
+  final bool? upvoted;
 
   Post({
     required this.id,
@@ -21,6 +22,7 @@ class Post {
     this.author,
     this.tags,
     this.comments,
+    this.upvoted,
   });
 
   factory Post.fromJson(Map<String, dynamic> json) {
@@ -39,6 +41,7 @@ class Post {
       comments: json['comments'] != null
           ? (json['comments'] as List).map((comment) => Comment.fromJson(comment)).toList()
           : null,
+      upvoted: json['upvoted'] ?? false,
     );
   }
 
@@ -52,6 +55,7 @@ class Post {
       'author': author?.toJson(),
       'tags': tags?.map((tag) => tag.toJson()).toList(),
       'comments': comments?.map((comment) => comment.toJson()).toList(),
+      'upvoted' : upvoted,
     };
   }
 
@@ -64,6 +68,7 @@ class Post {
     User? author,
     List<Tag>? tags,
     List<Comment>? comments,
+    bool? upvoted,
   }) {
     return Post(
       id: id ?? this.id,
@@ -74,6 +79,7 @@ class Post {
       author: author ?? this.author,
       tags: tags ?? this.tags,
       comments: comments ?? this.comments,
+      upvoted: upvoted ?? this.upvoted,
     );
   }
 
