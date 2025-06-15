@@ -34,7 +34,7 @@ class Comment {
       // Ensure 'timestamp' is correctly parsed. Assuming it's an ISO 8601 string.
       timestamp: json['timestamp'] != null
           ? DateTime.parse(json['timestamp'])
-          : DateTime.now(), // Fallback, ideally timestamp should always be present
+          :json['createdAt']!=null ? DateTime.parse(json['createdAt']):DateTime.now(), // Fallback, ideally timestamp should always be present
     );
   }
 

@@ -1,4 +1,7 @@
+import 'package:arebbus/models/comment.dart';
 import 'package:arebbus/models/post.dart';
+import 'package:arebbus/models/user.dart';
+import 'package:arebbus/service/api_service.dart';
 import 'package:arebbus/utils/feed_screen_utils.dart';
 import 'package:arebbus/widgets/post_card.dart';
 import 'package:flutter/material.dart';
@@ -157,20 +160,90 @@ class _FeedScreenState extends State<FeedScreen> with TickerProviderStateMixin{
     });
   }
 
-  void _addComment(int? postId, String commentContent) {
+  Future<void> _addCommentBackendFirst(int? postId, String commentContent) async {
     if (postId == null || commentContent.trim().isEmpty) return;
-    
-    final result = _feedScreenUtils.addComment(
-      posts: _posts,
-      filteredPosts: _filteredPosts,
-      postId: postId,
-      commentContent: commentContent,
-    );
 
-    setState(() {
-      _posts = result['posts'] as List<Post>;
-      _filteredPosts = result['filteredPosts'] as List<Post>;
-    });
+    try {
+      // Call backend first
+      final backendComment = await ApiService.instance.createComment(postId, commentContent.trim());
+
+      // Convert backend response to local Comment object
+      final localComment = Comment(
+        id: backendComment.id?.toInt(), // Handle potential Long to int conversion
+        content: backendComment.content,
+        postId: backendComment.postId.toInt() , // Use postId as fallback
+        numUpvote: backendComment.numUpvote.toInt() ,
+        timestamp: backendComment.timestamp,
+        author: User(
+          name: backendComment.author?.name ?? 'Anonymous',
+          image: 'https://picsum.photos/seed/picsum/200/300', // You might want to get this from backend
+        ),
+        post: null, // Don't set this to avoid circular dependency
+      );
+      // Update local state
+      final result = _feedScreenUtils.addBackendComment(
+        posts: _posts,
+        filteredPosts: _filteredPosts,
+        comment: localComment,
+      );
+
+      setState(() {
+        _posts = result['posts'] as List<Post>;
+        _filteredPosts = result['filteredPosts'] as List<Post>;
+      });
+
+    } catch (e) {
+      _showErrorSnackBar('Failed to add comment: ${e.toString()}', Colors.red);
+    }
+  }
+
+  Future<void> _addComment(int? postId, String commentContent) async {
+    if (postId == null || commentContent.trim().isEmpty) return;
+
+    // Show loading state if needed
+    // setState(() => _isAddingComment = true);
+
+    try {
+      // First, optimistically update the UI
+      final optimisticResult = _feedScreenUtils.addComment(
+        posts: _posts,
+        filteredPosts: _filteredPosts,
+        postId: postId,
+        commentContent: commentContent,
+      );
+
+      setState(() {
+        _posts = optimisticResult['posts'] as List<Post>;
+        _filteredPosts = optimisticResult['filteredPosts'] as List<Post>;
+      });
+
+      // Then call the backend
+      final backendComment = await ApiService.instance.createComment(postId, commentContent.trim());
+
+      // Update with the actual backend response
+      final backendResult = _feedScreenUtils.updateCommentWithBackendData(
+        posts: _posts,
+        filteredPosts: _filteredPosts,
+        postId: postId,
+        optimisticCommentId: DateTime.now().millisecondsSinceEpoch, // The ID we used locally
+        backendComment: backendComment,
+      );
+
+      setState(() {
+        _posts = backendResult['posts'] as List<Post>;
+        _filteredPosts = backendResult['filteredPosts'] as List<Post>;
+      });
+
+    } catch (e) {
+      // Revert the optimistic update on error
+      debugPrint("Error feed screen adding comment $e");
+      _showErrorSnackBar("Comment addition failed", Colors.red);
+      _loadPosts(isRefresh: true);
+
+    }
+    finally{
+
+    }
   }
 
   Future<void> _addPost(String content, List<String> tagNames) async {
@@ -290,7 +363,7 @@ class _FeedScreenState extends State<FeedScreen> with TickerProviderStateMixin{
             child: const Text('Submit'),
             onPressed: () {
               if (commentController.text.isNotEmpty) {
-                _addComment(postId, commentController.text);
+                _addCommentBackendFirst(postId, commentController.text);
                 Navigator.pop(context);
               } else {
                 _showErrorSnackBar('Comment cannot be empty.', Colors.orangeAccent);

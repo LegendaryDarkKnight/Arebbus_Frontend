@@ -423,8 +423,8 @@ class ApiService {
   Future<Comment> createComment(int postId, String content) async {
     try {
       final response = await _dio.post(
-        '/post/$postId/comment/create',
-        data: {'content': content},
+        '/comment',
+        data: {'content': content, 'postId': postId},
       );
       if (response.statusCode == 200 || response.statusCode == 201) {
         Map<String, dynamic> responseData =
@@ -617,37 +617,6 @@ class ApiService {
       'toggledAt': responseData['toggledAt'],
     };
   }
-
-
-// Usage examples:
-
-// For toggling post upvote:
-// try {
-//   final result = await togglePostUpvote('post-id-123');
-//   final parsedResult = parseUpvoteResponse(result);
-//
-//   if (parsedResult['success']) {
-//     print('Post upvote toggled successfully');
-//     print('Is upvoted: ${parsedResult['upvoted']}');
-//     print('Total upvotes: ${parsedResult['upvoteCount']}');
-//   }
-// } catch (e) {
-//   print('Error: $e');
-// }
-
-// For toggling comment upvote:
-// try {
-//   final result = await toggleCommentUpvote('comment-id-456');
-//   final parsedResult = parseUpvoteResponse(result);
-//
-//   if (parsedResult['success']) {
-//     print('Comment upvote toggled successfully');
-//     print('Is upvoted: ${parsedResult['upvoted']}');
-//     print('Total upvotes: ${parsedResult['upvoteCount']}');
-//   }
-// } catch (e) {
-//   print('Error: $e');
-// }
 
   Future<void> debugPrintStoredAuth() async {
     if (kDebugMode) {

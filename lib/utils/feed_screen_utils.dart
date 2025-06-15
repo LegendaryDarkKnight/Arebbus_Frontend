@@ -513,4 +513,71 @@ class FeedScreenUtils {
         ? 'No active filters'
         : activeFilters.join(' • ');
   }
+
+  Map<String, List<Post>> updateCommentWithBackendData({
+    required List<Post> posts,
+    required List<Post> filteredPosts,
+    required int postId,
+    required int optimisticCommentId,
+    required Comment backendComment,
+  }) {
+    final updatedPosts =
+        posts.map((post) {
+          if (post.id == postId) {
+            final updatedComments =
+                post.comments?.map((comment) {
+                  if (comment.id == optimisticCommentId) {
+                    return backendComment;
+                  }
+                  return comment;
+                }).toList() ??
+                [];
+            return post.copyWith(comments: updatedComments);
+          }
+          return post;
+        }).toList();
+
+    final updatedFilteredPosts =
+        filteredPosts.map((post) {
+          if (post.id == postId) {
+            final updatedComments =
+                post.comments?.map((comment) {
+                  if (comment.id == optimisticCommentId) {
+                    return backendComment;
+                  }
+                  return comment;
+                }).toList() ??
+                [];
+            return post.copyWith(comments: updatedComments);
+          }
+          return post;
+        }).toList();
+
+    return {'posts': updatedPosts, 'filteredPosts': updatedFilteredPosts};
+  }
+
+  Map<String, List<Post>> addBackendComment({
+    required List<Post> posts,
+    required List<Post> filteredPosts,
+    required Comment comment,
+  }) {
+    final updatedPosts = posts.map((post) {
+      if (post.id == comment.postId) {
+        final updatedComments = [...?post.comments, comment];
+        return post.copyWith(comments: updatedComments);
+      }
+      return post;
+    }).toList();
+
+    final updatedFilteredPosts = filteredPosts.map((post) {
+      if (post.id == comment.postId) {
+        final updatedComments = [...?post.comments, comment];
+        return post.copyWith(comments: updatedComments);
+      }
+      return post;
+    }).toList();
+
+    return {'posts': updatedPosts, 'filteredPosts': updatedFilteredPosts};
+  }
+
 }
