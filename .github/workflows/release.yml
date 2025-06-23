@@ -2,9 +2,8 @@ name: Arebbus APK Release Pipeline
 
 on:
   push:
-    tags:
-      - 'v*'  # Triggers on version tags like v1.0.0
-  workflow_dispatch:  # Allows manual trigger
+    branches: [main]
+  workflow_dispatch:
 
 jobs:
   build-test-release:
@@ -18,7 +17,7 @@ jobs:
         uses: actions/setup-java@v4
         with:
           distribution: 'zulu'
-          java-version: '11'  # Changed to Java 11 to match your gradle config
+          java-version: '17'  # Using Java 17 for Android SDK compatibility
 
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
