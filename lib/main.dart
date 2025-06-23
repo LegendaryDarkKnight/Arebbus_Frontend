@@ -8,7 +8,7 @@ import 'package:provider/provider.dart' show ChangeNotifierProvider, Consumer;
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await AppConfig.initialize();
+  await AppConfig.initializeFromEnv();
   runApp(
     ChangeNotifierProvider(
       create: (context) => AuthProvider()..initAuth(),

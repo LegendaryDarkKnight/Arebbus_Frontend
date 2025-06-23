@@ -47,9 +47,20 @@ jobs:
             echo "⚠️ No unit tests found, skipping..."
           fi
 
-      # 4. Build APK
+      # 4. Build APK with Environment Variables
       - name: Build release APK
-        run: flutter build apk --release
+        env:
+          API_BASE_URL: ${{ secrets.API_BASE_URL }}
+          APP_NAME: "Arebbus"
+          ENVIRONMENT: "production"
+        run: |
+          flutter build apk --release \
+            --dart-define=API_BASE_URL="$API_BASE_URL" \
+            --dart-define=APP_NAME="$APP_NAME" \
+            --dart-define=ENVIRONMENT="$ENVIRONMENT" \
+            --dart-define=BUILD_NUMBER=${{ github.run_number }} \
+            --dart-define=GIT_COMMIT=${{ github.sha }} \
+            --dart-define=BUILD_VERSION=${{ steps.version.outputs.VERSION }}
 
       - name: Get version from pubspec.yaml
         id: version
@@ -106,7 +117,7 @@ jobs:
       - name: Upload APK to Release
         uses: actions/upload-release-asset@v1
         env:
-          GITHUB_TOKEN: ${{ secrets.ACCESS_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
           asset_path: build/app/outputs/flutter-apk/arebbus-${{ github.ref_name }}.apk
