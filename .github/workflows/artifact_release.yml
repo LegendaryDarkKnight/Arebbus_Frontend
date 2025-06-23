@@ -1,4 +1,4 @@
-name: Arebbus APK Release Pipeline
+name: Arebbus APK Build Pipeline
 
 on:
   push:
@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  build-test-release:
+  build-test-artifact:
     runs-on: ubuntu-latest
 
     steps:
@@ -57,35 +57,21 @@ jobs:
       - name: Rename APK
         run: |
           mv build/app/outputs/flutter-apk/app-release.apk \
-               build/app/outputs/flutter-apk/arebbus-${{ github.ref_name }}.apk
+               build/app/outputs/flutter-apk/arebbus-v${{ steps.version.outputs.VERSION }}-build${{ github.run_number }}.apk
 
-      - name: Create Release
-        id: create_release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Upload APK as Artifact
+        uses: actions/upload-artifact@v4
         with:
-          tag_name: ${{ github.ref_name }}
-          release_name: Arebbus ${{ github.ref_name }}
-          body: |
-            ## 🚀 Arebbus ${{ github.ref_name }}
-            
-            ### 📱 Installation
-            Download the APK file below and install it on your Android device.
-            
-            **Note**: You may need to enable "Install from unknown sources" in your device settings.
-            
-            **App Version**: ${{ steps.version.outputs.VERSION }}
-            **Build Number**: ${{ github.run_number }}
-          draft: false
-          prerelease: false
+          name: arebbus-apk-v${{ steps.version.outputs.VERSION }}-build${{ github.run_number }}
+          path: build/app/outputs/flutter-apk/arebbus-v${{ steps.version.outputs.VERSION }}-build${{ github.run_number }}.apk
+          retention-days: 30
 
-      - name: Upload APK to Release
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: build/app/outputs/flutter-apk/arebbus-${{ github.ref_name }}.apk
-          asset_name: arebbus-${{ github.ref_name }}.apk
-          asset_content_type: application/vnd.android.package-archive
+      - name: Build Summary
+        run: |
+          echo "## 🚀 Build Summary" >> $GITHUB_STEP_SUMMARY
+          echo "- **App Version**: ${{ steps.version.outputs.VERSION }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Build Number**: ${{ github.run_number }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Git Commit**: ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **APK Name**: arebbus-v${{ steps.version.outputs.VERSION }}-build${{ github.run_number }}.apk" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "📱 **Download the APK from the Artifacts section above**" >> $GITHUB_STEP_SUMMARY
