@@ -1,0 +1,114 @@
+name: Arebbus APK Release Pipeline
+
+on:
+  push:
+    tags:
+      - 'v*'  # Triggers on version tags like v1.0.0
+  workflow_dispatch:  # Allows manual trigger
+
+jobs:
+  build-test-release:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Setup Environment
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.29.3'
+          channel: 'stable'
+
+      - name: Get dependencies
+        run: flutter pub get
+
+      # 2. Code Quality Checks
+      - name: Analyze code
+        run: flutter analyze --fatal-infos
+
+      - name: Check formatting
+        run: dart format --set-exit-if-changed .
+
+      # 3. Check for Tests and Run Them
+      - name: Check and run unit tests
+        run: |
+          if find test -name "*_test.dart" -type f 2>/dev/null | grep -q .; then
+            echo "✅ Found unit tests, running..."
+            flutter test --reporter=expanded
+          else
+            echo "⚠️ No unit tests found, skipping..."
+          fi
+
+      # 4. Build APK
+      - name: Build release APK
+        run: flutter build apk --release
+
+      - name: Get version from pubspec.yaml
+        id: version
+        run: |
+          VERSION=$(grep 'version:' pubspec.yaml | cut -d ' ' -f 2 | tr -d '\r')
+          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+          echo "Arebbus version: $VERSION"
+
+      - name: Rename APK
+        run: |
+          mv build/app/outputs/flutter-apk/app-release.apk \
+             build/app/outputs/flutter-apk/arebbus-${{ github.ref_name }}.apk
+
+      # 5. Integration Tests (if available)
+      - name: Run integration tests
+        run: |
+          if [ -d "integration_test" ] && [ -n "$(ls -A integration_test 2>/dev/null)" ]; then
+            echo "✅ Found integration tests, running..."
+            flutter test integration_test
+          else
+            echo "⚠️ No integration tests found, skipping..."
+          fi
+        continue-on-error: true
+
+      # 6. Create GitHub Release
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref_name }}
+          release_name: Arebbus ${{ github.ref_name }}
+          body: |
+            ## 🚀 Arebbus ${{ github.ref_name }}
+            
+            ### ✨ What's New
+            - Add your release notes here
+            - List new features and improvements
+            
+            ### 🐛 Bug Fixes
+            - List bug fixes here
+            
+            ### 📱 Installation
+            Download the APK file below and install it on your Android device.
+            
+            **Note**: You may need to enable "Install from unknown sources" in your device settings.
+            
+            **App Version**: ${{ steps.version.outputs.VERSION }}
+            **Target Android**: API 21+ (Android 5.0 and above)
+          draft: false
+          prerelease: false
+
+      - name: Upload APK to Release
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.ACCESS_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: build/app/outputs/flutter-apk/arebbus-${{ github.ref_name }}.apk
+          asset_name: arebbus-${{ github.ref_name }}.apk
+          asset_content_type: application/vnd.android.package-archive
