@@ -30,7 +30,14 @@ jobs:
       # Accept Android SDK licenses
       - name: Accept Android SDK licenses
         run: |
-          yes | $ANDROID_HOME/tools/bin/sdkmanager --licenses
+          if [ -f "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" ]; then
+            yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses
+          elif [ -f "$ANDROID_HOME/tools/bin/sdkmanager" ]; then
+            yes | $ANDROID_HOME/tools/bin/sdkmanager --licenses
+          else
+            echo "sdkmanager not found, trying flutter doctor"
+            yes | flutter doctor --android-licenses || true
+          fi
         shell: bash
 
       - name: Get dependencies
