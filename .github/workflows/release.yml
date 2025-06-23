@@ -30,6 +30,12 @@ jobs:
       - name: Get dependencies
         run: flutter pub get
 
+      # Add this step to accept Android SDK licenses
+      - name: Accept Android SDK licenses
+        run: |
+          yes | sdkmanager --licenses > /dev/null
+        shell: bash
+
       # 2. Code Quality Checks
       - name: Analyze code
         run: flutter analyze --fatal-infos
@@ -72,7 +78,7 @@ jobs:
       - name: Rename APK
         run: |
           mv build/app/outputs/flutter-apk/app-release.apk \
-             build/app/outputs/flutter-apk/arebbus-${{ github.ref_name }}.apk
+               build/app/outputs/flutter-apk/arebbus-${{ github.ref_name }}.apk
 
       # 5. Integration Tests (if available)
       - name: Run integration tests
