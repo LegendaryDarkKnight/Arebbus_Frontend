@@ -13,7 +13,7 @@ class ApiService {
   static const String _tokenKey = 'auth_token';
   static const String _userDataKey = 'user_data';
 
-  ApiService._internal(){
+  ApiService._internal() {
     _initializeDio();
   }
 
@@ -181,7 +181,11 @@ class ApiService {
     }
   }
 
-  Future<AuthResponse> registerUser(String name, String email, String password) async {
+  Future<AuthResponse> registerUser(
+    String name,
+    String email,
+    String password,
+  ) async {
     try {
       final response = await _dio.post(
         '/auth/register',
@@ -196,10 +200,14 @@ class ApiService {
         ),
       );
 
-      final authResponse = AuthResponse.fromJson(response.data as Map<String, dynamic>);
+      final authResponse = AuthResponse.fromJson(
+        response.data as Map<String, dynamic>,
+      );
 
       if (authResponse.success) {
-        await saveAuthData(authResponse); // optional if you want to persist session
+        await saveAuthData(
+          authResponse,
+        ); // optional if you want to persist session
       }
       return authResponse;
     } on DioException catch (e) {
@@ -310,7 +318,10 @@ class ApiService {
     }
   }
 
-  Future<Map<String, dynamic>> createPost(String content, List<String> tags) async {
+  Future<Map<String, dynamic>> createPost(
+    String content,
+    List<String> tags,
+  ) async {
     try {
       debugPrint('Creating post with content: $content and tags: $tags');
       debugPrint('Making request to: ${_dio.options.baseUrl}/post/create');
@@ -497,7 +508,8 @@ class ApiService {
         throw DioException(
           requestOptions: response.requestOptions,
           response: response,
-          error: 'Failed to toggle post upvote: Status code ${response.statusCode}',
+          error:
+              'Failed to toggle post upvote: Status code ${response.statusCode}',
         );
       }
     } on DioException catch (e) {
@@ -568,7 +580,8 @@ class ApiService {
         throw DioException(
           requestOptions: response.requestOptions,
           response: response,
-          error: 'Failed to toggle comment upvote: Status code ${response.statusCode}',
+          error:
+              'Failed to toggle comment upvote: Status code ${response.statusCode}',
         );
       }
     } on DioException catch (e) {
@@ -596,7 +609,9 @@ class ApiService {
           if (statusCode == 401) {
             throw Exception('Authentication required - please log in');
           } else if (statusCode == 403) {
-            throw Exception('You do not have permission to upvote this comment');
+            throw Exception(
+              'You do not have permission to upvote this comment',
+            );
           } else if (statusCode == 404) {
             throw Exception('Comment not found');
           } else {
@@ -651,5 +666,4 @@ class ApiService {
       debugPrint('======================');
     }
   }
-
 }

@@ -19,7 +19,6 @@ class _LoginScreenState extends State<LoginScreen> {
 
   static final _emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
 
-
   @override
   void dispose() {
     _emailController.dispose();
@@ -44,23 +43,24 @@ class _LoginScreenState extends State<LoginScreen> {
     } else {
       _showErrorDialog(response.message);
     }
-    
+
     setState(() => _isLoading = false);
   }
 
   void _showErrorDialog(String message) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Login Error'),
-        content: Text(message),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('OK'),
+      builder:
+          (context) => AlertDialog(
+            title: const Text('Login Error'),
+            content: Text(message),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('OK'),
+              ),
+            ],
           ),
-        ],
-      ),
     );
   }
 
@@ -103,7 +103,11 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  InputDecoration _inputDecoration(String label, IconData icon, {Widget? suffix}) {
+  InputDecoration _inputDecoration(
+    String label,
+    IconData icon, {
+    Widget? suffix,
+  }) {
     return InputDecoration(
       labelText: label,
       prefixIcon: Icon(icon),
@@ -144,24 +148,23 @@ class _LoginScreenState extends State<LoginScreen> {
         style: ElevatedButton.styleFrom(
           backgroundColor: Colors.blue.shade600,
           foregroundColor: Colors.white,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
-          ),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
           elevation: 2,
         ),
-        child: _isLoading
-            ? const SizedBox(
-                height: 20,
-                width: 20,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+        child:
+            _isLoading
+                ? const SizedBox(
+                  height: 20,
+                  width: 20,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                  ),
+                )
+                : const Text(
+                  'Sign In',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
                 ),
-              )
-            : const Text(
-                'Sign In',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-              ),
       ),
     );
   }
@@ -170,7 +173,10 @@ class _LoginScreenState extends State<LoginScreen> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        Text("Don't have an account? ", style: TextStyle(color: Colors.grey[600])),
+        Text(
+          "Don't have an account? ",
+          style: TextStyle(color: Colors.grey[600]),
+        ),
         GestureDetector(
           onTap: () {
             Navigator.push(
@@ -180,7 +186,10 @@ class _LoginScreenState extends State<LoginScreen> {
           },
           child: Text(
             'Sign Up',
-            style: TextStyle(color: Colors.blue.shade600, fontWeight: FontWeight.w600),
+            style: TextStyle(
+              color: Colors.blue.shade600,
+              fontWeight: FontWeight.w600,
+            ),
           ),
         ),
       ],
@@ -205,17 +214,28 @@ class _LoginScreenState extends State<LoginScreen> {
                     color: Colors.blue.shade600,
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(Icons.directions_bus, size: 50, color: Colors.white),
+                  child: const Icon(
+                    Icons.directions_bus,
+                    size: 50,
+                    color: Colors.white,
+                  ),
                 ),
                 const SizedBox(height: 32),
 
                 // Title
                 const Text(
                   'Welcome to Arebbus',
-                  style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.black87),
+                  style: TextStyle(
+                    fontSize: 28,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black87,
+                  ),
                 ),
                 const SizedBox(height: 8),
-                Text('Sign in to your account', style: TextStyle(fontSize: 16, color: Colors.grey[600])),
+                Text(
+                  'Sign in to your account',
+                  style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+                ),
                 const SizedBox(height: 48),
 
                 // Form Container

@@ -88,15 +88,17 @@ class PostCardUtils {
         content: item['content'] as String? ?? '',
         numUpvote: item['numUpvote'] as int? ?? 0,
         postId: item['postId'] as int,
-        timestamp: item['createdAt'] != null
-            ? DateTime.parse(item['createdAt'] as String)
-            : DateTime.now(),
-        author: item['authorName'] != null
-            ? User(
-                name: item['authorName'] as String,
-                image: 'https://picsum.photos/seed/picsum/200/300',
-              )
-            : null,
+        timestamp:
+            item['createdAt'] != null
+                ? DateTime.parse(item['createdAt'] as String)
+                : DateTime.now(),
+        author:
+            item['authorName'] != null
+                ? User(
+                  name: item['authorName'] as String,
+                  image: 'https://picsum.photos/seed/picsum/200/300',
+                )
+                : null,
       );
     }).toList();
   }
@@ -172,9 +174,9 @@ class _PostCardState extends State<PostCard> {
     } catch (e) {
       debugPrint('Error fetching comments: $e');
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to load comments: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Failed to load comments: $e')));
       }
     } finally {
       setState(() => _isLoadingComments = false);
@@ -253,7 +255,8 @@ class _PostCardState extends State<PostCard> {
         _buildAvatar(theme),
         const SizedBox(width: 12),
         Expanded(child: _buildUserInfo(theme, timeAgo)),
-        if (primaryTagName != null) _buildTagChip(theme, primaryTagName, tagAppearance),
+        if (primaryTagName != null)
+          _buildTagChip(theme, primaryTagName, tagAppearance),
       ],
     );
   }
@@ -261,23 +264,24 @@ class _PostCardState extends State<PostCard> {
   Widget _buildAvatar(ThemeData theme) {
     return CircleAvatar(
       radius: PostCardConstants.avatarRadius,
-      backgroundImage: widget.post.author?.image != null &&
-              widget.post.author!.image.isNotEmpty
-          ? NetworkImage(widget.post.author!.image)
-          : null,
+      backgroundImage:
+          widget.post.author?.image != null &&
+                  widget.post.author!.image.isNotEmpty
+              ? NetworkImage(widget.post.author!.image)
+              : null,
       backgroundColor: theme.colorScheme.surfaceContainerHighest,
-      child: widget.post.author?.image == null ||
-              widget.post.author!.image.isEmpty
-          ? Text(
-              widget.post.author?.name.isNotEmpty == true
-                  ? widget.post.author!.name[0].toUpperCase()
-                  : 'U',
-              style: TextStyle(
-                color: theme.colorScheme.onSurfaceVariant,
-                fontSize: 18,
-              ),
-            )
-          : null,
+      child:
+          widget.post.author?.image == null || widget.post.author!.image.isEmpty
+              ? Text(
+                widget.post.author?.name.isNotEmpty == true
+                    ? widget.post.author!.name[0].toUpperCase()
+                    : 'U',
+                style: TextStyle(
+                  color: theme.colorScheme.onSurfaceVariant,
+                  fontSize: 18,
+                ),
+              )
+              : null,
     );
   }
 
@@ -302,7 +306,11 @@ class _PostCardState extends State<PostCard> {
     );
   }
 
-  Widget _buildTagChip(ThemeData theme, String tagName, TagAppearance tagAppearance) {
+  Widget _buildTagChip(
+    ThemeData theme,
+    String tagName,
+    TagAppearance tagAppearance,
+  ) {
     return Chip(
       avatar: FaIcon(
         tagAppearance.iconData,
@@ -323,7 +331,7 @@ class _PostCardState extends State<PostCard> {
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(PostCardConstants.borderRadius),
         side: BorderSide(
-          color: tagAppearance.chipForegroundColor.withOpacity(0.3),
+          color: tagAppearance.chipForegroundColor.withValues(alpha: 0.3),
         ),
       ),
     );
@@ -334,7 +342,7 @@ class _PostCardState extends State<PostCard> {
       widget.post.content,
       style: theme.textTheme.bodyLarge?.copyWith(
         height: 1.45,
-        color: theme.colorScheme.onSurface.withOpacity(0.85),
+        color: theme.colorScheme.onSurface.withValues(alpha: 0.85),
       ),
     );
   }
@@ -345,19 +353,29 @@ class _PostCardState extends State<PostCard> {
       child: Wrap(
         spacing: PostCardConstants.chipSpacing,
         runSpacing: PostCardConstants.chipRunSpacing,
-        children: widget.post.tags!.map((tag) => Chip(
-          label: Text(
-            '#${tag.name}',
-            style: TextStyle(
-              fontSize: 10,
-              color: theme.colorScheme.onSecondaryContainer.withOpacity(0.9),
-            ),
-          ),
-          backgroundColor: theme.colorScheme.secondaryContainer.withOpacity(0.7),
-          padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 1.0),
-          materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-          visualDensity: VisualDensity.compact,
-        )).toList(),
+        children:
+            widget.post.tags!
+                .map(
+                  (tag) => Chip(
+                    label: Text(
+                      '#${tag.name}',
+                      style: TextStyle(
+                        fontSize: 10,
+                        color: theme.colorScheme.onSecondaryContainer
+                            .withValues(alpha: 0.9),
+                      ),
+                    ),
+                    backgroundColor: theme.colorScheme.secondaryContainer
+                        .withValues(alpha: 0.7),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8.0,
+                      vertical: 1.0,
+                    ),
+                    materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    visualDensity: VisualDensity.compact,
+                  ),
+                )
+                .toList(),
       ),
     );
   }
@@ -368,7 +386,7 @@ class _PostCardState extends State<PostCard> {
       child: Divider(
         height: 16,
         thickness: PostCardConstants.dividerThickness,
-        color: theme.dividerColor.withOpacity(0.5),
+        color: theme.dividerColor.withValues(alpha: 0.5),
       ),
     );
   }
@@ -379,7 +397,10 @@ class _PostCardState extends State<PostCard> {
       children: [
         _buildInteractionButton(
           theme: theme,
-          icon:  (widget.post.upvoted ?? false) ? FontAwesomeIcons.solidThumbsUp : FontAwesomeIcons.thumbsUp,
+          icon:
+              (widget.post.upvoted ?? false)
+                  ? FontAwesomeIcons.solidThumbsUp
+                  : FontAwesomeIcons.thumbsUp,
           label: '${widget.post.numUpvote}',
           onPressed: widget.onUpvote,
           color: theme.colorScheme.primary,
@@ -388,19 +409,21 @@ class _PostCardState extends State<PostCard> {
         ),
         _buildInteractionButton(
           theme: theme,
-          icon: _showComments
-              ? FontAwesomeIcons.solidCommentDots
-              : FontAwesomeIcons.commentDots,
+          icon:
+              _showComments
+                  ? FontAwesomeIcons.solidCommentDots
+                  : FontAwesomeIcons.commentDots,
           label: '',
           onPressed: () => _fetchComments(widget.post.id),
-          color: _showComments
-              ? theme.colorScheme.primary
-              : theme.colorScheme.onSurfaceVariant,
+          color:
+              _showComments
+                  ? theme.colorScheme.primary
+                  : theme.colorScheme.onSurfaceVariant,
           tooltip: _showComments ? 'Hide Comments' : 'Show Comments',
         ),
         _buildInteractionButton(
           theme: theme,
-          icon: FontAwesomeIcons.plusCircle,
+          icon: FontAwesomeIcons.circlePlus,
           label: '',
           onPressed: widget.onComment,
           color: theme.colorScheme.secondary,
@@ -449,10 +472,11 @@ class _PostCardState extends State<PostCard> {
                           ? theme.textTheme.labelMedium
                           : theme.textTheme.bodySmall)
                       ?.copyWith(
-                    color: color,
-                    fontWeight: isPrimary ? FontWeight.bold : FontWeight.w500,
-                    letterSpacing: 0.3,
-                  ),
+                        color: color,
+                        fontWeight:
+                            isPrimary ? FontWeight.bold : FontWeight.w500,
+                        letterSpacing: 0.3,
+                      ),
                 ),
               ],
             ],
@@ -476,7 +500,7 @@ class _PostCardState extends State<PostCard> {
               child: Divider(
                 height: 1,
                 thickness: 0.5,
-                color: theme.dividerColor.withOpacity(0.3),
+                color: theme.dividerColor.withValues(alpha: 0.3),
               ),
             ),
             if (_isLoadingComments)
@@ -539,7 +563,8 @@ class _PostCardState extends State<PostCard> {
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
           itemCount: _comments.length,
-          itemBuilder: (context, index) => CommentCard(comment: _comments[index]),
+          itemBuilder:
+              (context, index) => CommentCard(comment: _comments[index]),
         ),
       ],
     );

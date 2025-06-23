@@ -64,5 +64,4 @@ class AuthProvider with ChangeNotifier {
   String? getLastLoginError() {
     return _currentUser?.success == false ? _currentUser?.message : null;
   }
-  
 }

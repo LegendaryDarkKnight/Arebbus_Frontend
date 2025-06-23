@@ -9,7 +9,8 @@ import 'package:http/http.dart' as http;
 class AuthService {
   static const String _tokenKey = 'auth_token';
   static const String _userDataKey = 'user_data';
-  static final String _baseUrl = AppConfig.instance.apiBaseUrl; // Replace with your API URL
+  static final String _baseUrl =
+      AppConfig.instance.apiBaseUrl; // Replace with your API URL
 
   // Store authentication data
   Future<void> saveAuthData(AuthResponse authResponse) async {
@@ -46,15 +47,12 @@ class AuthService {
       final response = await http.post(
         Uri.parse('$_baseUrl/login'), // Replace with your login endpoint
         headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'username': username,
-          'password': password,
-        }),
+        body: jsonEncode({'username': username, 'password': password}),
       );
 
       if (response.statusCode == 200) {
         final authResponse = AuthResponse.fromJson(jsonDecode(response.body));
-        
+
         if (authResponse.success) {
           await saveAuthData(authResponse);
           return authResponse;
@@ -86,13 +84,13 @@ class AuthService {
   // Make authenticated API calls
   Future<http.Response> authenticatedGet(String endpoint) async {
     final headers = await getAuthHeaders();
-    return await http.get(
-      Uri.parse('$_baseUrl$endpoint'),
-      headers: headers,
-    );
+    return await http.get(Uri.parse('$_baseUrl$endpoint'), headers: headers);
   }
 
-  Future<http.Response> authenticatedPost(String endpoint, Map<String, dynamic> body) async {
+  Future<http.Response> authenticatedPost(
+    String endpoint,
+    Map<String, dynamic> body,
+  ) async {
     final headers = await getAuthHeaders();
     return await http.post(
       Uri.parse('$_baseUrl$endpoint'),

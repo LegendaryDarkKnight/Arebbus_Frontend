@@ -12,7 +12,7 @@ class FeedScreen extends StatefulWidget {
   State<FeedScreen> createState() => _FeedScreenState();
 }
 
-class _FeedScreenState extends State<FeedScreen> with TickerProviderStateMixin{
+class _FeedScreenState extends State<FeedScreen> with TickerProviderStateMixin {
   List<Post> _posts = [];
   List<Post> _filteredPosts = [];
   String _selectedTagFilter = 'All';
@@ -64,7 +64,7 @@ class _FeedScreenState extends State<FeedScreen> with TickerProviderStateMixin{
   // Data Loading Methods
   Future<void> _loadPosts({bool isRefresh = false}) async {
     if (!mounted) return;
-    
+
     final result = await _feedScreenUtils.loadPosts(
       currentPage: isRefresh ? 0 : _currentPage,
       pageSize: 2,
@@ -80,18 +80,24 @@ class _FeedScreenState extends State<FeedScreen> with TickerProviderStateMixin{
       _totalPages = result['totalPages'];
       _isLoading = result['isLoading'];
       _loadError = result['error'];
-      
+
       _updateAvailableFilterTags();
       _applyFiltersAndSort();
     });
 
     if (result['error'] != null) {
-      _showErrorSnackBar('Failed to load posts: ${result['error']}', Colors.redAccent);
+      _showErrorSnackBar(
+        'Failed to load posts: ${result['error']}',
+        Colors.redAccent,
+      );
     }
   }
 
   Future<void> _loadMorePosts() async {
-    if (_isLoadingMore || _isLoading || !mounted || _currentPage >= _totalPages - 1) {
+    if (_isLoadingMore ||
+        _isLoading ||
+        !mounted ||
+        _currentPage >= _totalPages - 1) {
       return;
     }
 
@@ -115,7 +121,7 @@ class _FeedScreenState extends State<FeedScreen> with TickerProviderStateMixin{
       _isLoading = false;
       _isLoadingMore = false;
       _loadError = result['error'];
-      
+
       _updateAvailableFilterTags();
       _applyFiltersAndSort();
     });
@@ -143,14 +149,14 @@ class _FeedScreenState extends State<FeedScreen> with TickerProviderStateMixin{
   }
 
   // Post Actions
-  Future<void> _upvotePost(int? postId) async{
+  Future<void> _upvotePost(int? postId) async {
     if (postId == null) return;
-    
+
     final result = await _feedScreenUtils.upvotePost(
       posts: _posts,
       filteredPosts: _filteredPosts,
       postId: postId,
-      onErrorReload: ()=> _loadPosts(isRefresh: true),
+      onErrorReload: () => _loadPosts(isRefresh: true),
     );
 
     setState(() {
@@ -160,23 +166,32 @@ class _FeedScreenState extends State<FeedScreen> with TickerProviderStateMixin{
     });
   }
 
-  Future<void> _addCommentBackendFirst(int? postId, String commentContent) async {
+  Future<void> _addCommentBackendFirst(
+    int? postId,
+    String commentContent,
+  ) async {
     if (postId == null || commentContent.trim().isEmpty) return;
 
     try {
       // Call backend first
-      final backendComment = await ApiService.instance.createComment(postId, commentContent.trim());
+      final backendComment = await ApiService.instance.createComment(
+        postId,
+        commentContent.trim(),
+      );
 
       // Convert backend response to local Comment object
       final localComment = Comment(
-        id: backendComment.id?.toInt(), // Handle potential Long to int conversion
+        id:
+            backendComment.id
+                ?.toInt(), // Handle potential Long to int conversion
         content: backendComment.content,
-        postId: backendComment.postId.toInt() , // Use postId as fallback
-        numUpvote: backendComment.numUpvote.toInt() ,
+        postId: backendComment.postId.toInt(), // Use postId as fallback
+        numUpvote: backendComment.numUpvote.toInt(),
         timestamp: backendComment.timestamp,
         author: User(
           name: backendComment.author?.name ?? 'Anonymous',
-          image: 'https://picsum.photos/seed/picsum/200/300', // You might want to get this from backend
+          image:
+              'https://picsum.photos/seed/picsum/200/300', // You might want to get this from backend
         ),
         post: null, // Don't set this to avoid circular dependency
       );
@@ -191,64 +206,63 @@ class _FeedScreenState extends State<FeedScreen> with TickerProviderStateMixin{
         _posts = result['posts'] as List<Post>;
         _filteredPosts = result['filteredPosts'] as List<Post>;
       });
-
     } catch (e) {
       _showErrorSnackBar('Failed to add comment: ${e.toString()}', Colors.red);
     }
   }
 
-  Future<void> _addComment(int? postId, String commentContent) async {
-    if (postId == null || commentContent.trim().isEmpty) return;
-
-    // Show loading state if needed
-    // setState(() => _isAddingComment = true);
-
-    try {
-      // First, optimistically update the UI
-      final optimisticResult = _feedScreenUtils.addComment(
-        posts: _posts,
-        filteredPosts: _filteredPosts,
-        postId: postId,
-        commentContent: commentContent,
-      );
-
-      setState(() {
-        _posts = optimisticResult['posts'] as List<Post>;
-        _filteredPosts = optimisticResult['filteredPosts'] as List<Post>;
-      });
-
-      // Then call the backend
-      final backendComment = await ApiService.instance.createComment(postId, commentContent.trim());
-
-      // Update with the actual backend response
-      final backendResult = _feedScreenUtils.updateCommentWithBackendData(
-        posts: _posts,
-        filteredPosts: _filteredPosts,
-        postId: postId,
-        optimisticCommentId: DateTime.now().millisecondsSinceEpoch, // The ID we used locally
-        backendComment: backendComment,
-      );
-
-      setState(() {
-        _posts = backendResult['posts'] as List<Post>;
-        _filteredPosts = backendResult['filteredPosts'] as List<Post>;
-      });
-
-    } catch (e) {
-      // Revert the optimistic update on error
-      debugPrint("Error feed screen adding comment $e");
-      _showErrorSnackBar("Comment addition failed", Colors.red);
-      _loadPosts(isRefresh: true);
-
-    }
-    finally{
-
-    }
-  }
+  // Future<void> _addComment(int? postId, String commentContent) async {
+  //   if (postId == null || commentContent.trim().isEmpty) return;
+  //
+  //   // Show loading state if needed
+  //   // setState(() => _isAddingComment = true);
+  //
+  //   try {
+  //     // First, optimistically update the UI
+  //     final optimisticResult = _feedScreenUtils.addComment(
+  //       posts: _posts,
+  //       filteredPosts: _filteredPosts,
+  //       postId: postId,
+  //       commentContent: commentContent,
+  //     );
+  //
+  //     setState(() {
+  //       _posts = optimisticResult['posts'] as List<Post>;
+  //       _filteredPosts = optimisticResult['filteredPosts'] as List<Post>;
+  //     });
+  //
+  //     // Then call the backend
+  //     final backendComment = await ApiService.instance.createComment(postId, commentContent.trim());
+  //
+  //     // Update with the actual backend response
+  //     final backendResult = _feedScreenUtils.updateCommentWithBackendData(
+  //       posts: _posts,
+  //       filteredPosts: _filteredPosts,
+  //       postId: postId,
+  //       optimisticCommentId: DateTime.now().millisecondsSinceEpoch, // The ID we used locally
+  //       backendComment: backendComment,
+  //     );
+  //
+  //     setState(() {
+  //       _posts = backendResult['posts'] as List<Post>;
+  //       _filteredPosts = backendResult['filteredPosts'] as List<Post>;
+  //     });
+  //
+  //   } catch (e) {
+  //     // Revert the optimistic update on error
+  //     debugPrint("Error feed screen adding comment $e");
+  //     _showErrorSnackBar("Comment addition failed", Colors.red);
+  //     _loadPosts(isRefresh: true);
+  //
+  //   }
+  //   finally{
+  //
+  //   }
+  // }
 
   Future<void> _addPost(String content, List<String> tagNames) async {
     if (content.trim().isEmpty) return;
-    
+
     try {
       final result = await _feedScreenUtils.addPost(
         content: content,
@@ -321,7 +335,11 @@ class _FeedScreenState extends State<FeedScreen> with TickerProviderStateMixin{
                     const SizedBox(height: 12),
                     _buildCustomTagField(customTagController),
                     const SizedBox(height: 24),
-                    _buildPostActions(contentController, customTagController, selectedTagsInDialog),
+                    _buildPostActions(
+                      contentController,
+                      customTagController,
+                      selectedTagsInDialog,
+                    ),
                     const SizedBox(height: 20),
                   ],
                 ),
@@ -338,43 +356,47 @@ class _FeedScreenState extends State<FeedScreen> with TickerProviderStateMixin{
     final commentController = TextEditingController();
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Add Comment'),
-        content: TextField(
-          controller: commentController,
-          decoration: InputDecoration(
-            labelText: 'Your comment',
-            hintText: 'Share your thoughts...',
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
+      builder:
+          (context) => AlertDialog(
+            title: const Text('Add Comment'),
+            content: TextField(
+              controller: commentController,
+              decoration: InputDecoration(
+                labelText: 'Your comment',
+                hintText: 'Share your thoughts...',
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              maxLines: 3,
+              minLines: 1,
+              autofocus: true,
+              textCapitalization: TextCapitalization.sentences,
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Cancel'),
+              ),
+              ElevatedButton(
+                child: const Text('Submit'),
+                onPressed: () {
+                  if (commentController.text.isNotEmpty) {
+                    _addCommentBackendFirst(postId, commentController.text);
+                    Navigator.pop(context);
+                  } else {
+                    _showErrorSnackBar(
+                      'Comment cannot be empty.',
+                      Colors.orangeAccent,
+                    );
+                  }
+                },
+              ),
+            ],
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
             ),
           ),
-          maxLines: 3,
-          minLines: 1,
-          autofocus: true,
-          textCapitalization: TextCapitalization.sentences,
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            child: const Text('Submit'),
-            onPressed: () {
-              if (commentController.text.isNotEmpty) {
-                _addCommentBackendFirst(postId, commentController.text);
-                Navigator.pop(context);
-              } else {
-                _showErrorSnackBar('Comment cannot be empty.', Colors.orangeAccent);
-              }
-            },
-          ),
-        ],
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
-      ),
     );
   }
 
@@ -382,9 +404,9 @@ class _FeedScreenState extends State<FeedScreen> with TickerProviderStateMixin{
   Widget _buildAddPostHeader() {
     return Text(
       'Create New Post',
-      style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-        fontWeight: FontWeight.bold,
-      ),
+      style: Theme.of(
+        context,
+      ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
     );
   }
 
@@ -394,9 +416,7 @@ class _FeedScreenState extends State<FeedScreen> with TickerProviderStateMixin{
       decoration: InputDecoration(
         labelText: 'What\'s on your mind?',
         hintText: 'Share an update or ask a question...',
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
         filled: true,
         fillColor: Theme.of(context).colorScheme.surface.withAlpha(150),
       ),
@@ -406,43 +426,46 @@ class _FeedScreenState extends State<FeedScreen> with TickerProviderStateMixin{
     );
   }
 
-  Widget _buildTagSelection(Set<String> selectedTags, StateSetter setModalState) {
+  Widget _buildTagSelection(
+    Set<String> selectedTags,
+    StateSetter setModalState,
+  ) {
     final defaultTags = _feedScreenUtils.getDefaultTags();
-    
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          'Add Tags:',
-          style: Theme.of(context).textTheme.titleMedium,
-        ),
+        Text('Add Tags:', style: Theme.of(context).textTheme.titleMedium),
         const SizedBox(height: 8),
         Wrap(
           spacing: 8.0,
           runSpacing: 8.0,
-          children: defaultTags.map((tag) {
-            final isSelected = selectedTags.contains(tag);
-            return FilterChip(
-              label: Text(tag),
-              selected: isSelected,
-              onSelected: (selected) {
-                setModalState(() {
-                  if (selected) {
-                    selectedTags.add(tag);
-                  } else {
-                    selectedTags.remove(tag);
-                  }
-                });
-              },
-              selectedColor: Theme.of(context).colorScheme.primaryContainer,
-              checkmarkColor: Theme.of(context).colorScheme.onPrimaryContainer,
-              labelStyle: TextStyle(
-                color: isSelected
-                    ? Theme.of(context).colorScheme.onPrimaryContainer
-                    : Theme.of(context).textTheme.bodyLarge?.color,
-              ),
-            );
-          }).toList(),
+          children:
+              defaultTags.map((tag) {
+                final isSelected = selectedTags.contains(tag);
+                return FilterChip(
+                  label: Text(tag),
+                  selected: isSelected,
+                  onSelected: (selected) {
+                    setModalState(() {
+                      if (selected) {
+                        selectedTags.add(tag);
+                      } else {
+                        selectedTags.remove(tag);
+                      }
+                    });
+                  },
+                  selectedColor: Theme.of(context).colorScheme.primaryContainer,
+                  checkmarkColor:
+                      Theme.of(context).colorScheme.onPrimaryContainer,
+                  labelStyle: TextStyle(
+                    color:
+                        isSelected
+                            ? Theme.of(context).colorScheme.onPrimaryContainer
+                            : Theme.of(context).textTheme.bodyLarge?.color,
+                  ),
+                );
+              }).toList(),
         ),
       ],
     );
@@ -454,9 +477,7 @@ class _FeedScreenState extends State<FeedScreen> with TickerProviderStateMixin{
       decoration: InputDecoration(
         labelText: 'Custom Tags',
         hintText: 'e.g., Event, Suggestion (comma-separated)',
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
         filled: true,
         fillColor: Theme.of(context).colorScheme.surface.withAlpha(150),
       ),
@@ -489,16 +510,20 @@ class _FeedScreenState extends State<FeedScreen> with TickerProviderStateMixin{
           ),
           onPressed: () {
             if (contentController.text.isNotEmpty) {
-              final customTags = customTagController.text
-                  .split(',')
-                  .map((tag) => tag.trim())
-                  .where((tag) => tag.isNotEmpty)
-                  .toList();
+              final customTags =
+                  customTagController.text
+                      .split(',')
+                      .map((tag) => tag.trim())
+                      .where((tag) => tag.isNotEmpty)
+                      .toList();
               final allTags = {...selectedTags, ...customTags}.toList();
               _addPost(contentController.text, allTags);
               Navigator.pop(context);
             } else {
-              _showErrorSnackBar('Post content cannot be empty.', Colors.redAccent);
+              _showErrorSnackBar(
+                'Post content cannot be empty.',
+                Colors.redAccent,
+              );
             }
           },
         ),
@@ -524,22 +549,24 @@ class _FeedScreenState extends State<FeedScreen> with TickerProviderStateMixin{
           borderSide: BorderSide(color: theme.colorScheme.primary, width: 1.5),
         ),
         contentPadding: const EdgeInsets.symmetric(vertical: 14.0),
-        suffixIcon: _searchController.text.isNotEmpty
-            ? IconButton(
-                icon: const Icon(Icons.clear, color: Colors.grey),
-                onPressed: () {
-                  _searchController.clear();
-                  _onSearchChanged();
-                },
-              )
-            : null,
+        suffixIcon:
+            _searchController.text.isNotEmpty
+                ? IconButton(
+                  icon: const Icon(Icons.clear, color: Colors.grey),
+                  onPressed: () {
+                    _searchController.clear();
+                    _onSearchChanged();
+                  },
+                )
+                : null,
       ),
     );
   }
 
   Widget _buildFilterControls() {
     final theme = Theme.of(context);
-    final hasActiveFilters = _selectedTagFilter != 'All' ||
+    final hasActiveFilters =
+        _selectedTagFilter != 'All' ||
         _sortBy != 'Recent' ||
         _sortBy != 'Default' ||
         _searchController.text.isNotEmpty;
@@ -568,18 +595,20 @@ class _FeedScreenState extends State<FeedScreen> with TickerProviderStateMixin{
           children: [
             Icon(
               _showAdvancedFilters ? Icons.tune_rounded : Icons.tune_outlined,
-              color: hasActiveFilters
-                  ? theme.colorScheme.primary
-                  : theme.colorScheme.onSurfaceVariant,
+              color:
+                  hasActiveFilters
+                      ? theme.colorScheme.primary
+                      : theme.colorScheme.onSurfaceVariant,
               size: 20,
             ),
             const SizedBox(width: 6),
             Text(
               _showAdvancedFilters ? 'Hide Filters' : 'Show Filters',
               style: theme.textTheme.labelLarge?.copyWith(
-                color: hasActiveFilters
-                    ? theme.colorScheme.primary
-                    : theme.colorScheme.onSurfaceVariant,
+                color:
+                    hasActiveFilters
+                        ? theme.colorScheme.primary
+                        : theme.colorScheme.onSurfaceVariant,
                 fontWeight: FontWeight.w500,
               ),
             ),
@@ -608,14 +637,15 @@ class _FeedScreenState extends State<FeedScreen> with TickerProviderStateMixin{
             color: theme.colorScheme.onSurfaceVariant,
           ),
           dropdownColor: theme.cardColor,
-          items: <String>['Recent', 'Popular', 'Default']
-              .map<DropdownMenuItem<String>>(
-                (String value) => DropdownMenuItem<String>(
-                  value: value,
-                  child: Text(value),
-                ),
-              )
-              .toList(),
+          items:
+              <String>['Recent', 'Popular', 'Default']
+                  .map<DropdownMenuItem<String>>(
+                    (String value) => DropdownMenuItem<String>(
+                      value: value,
+                      child: Text(value),
+                    ),
+                  )
+                  .toList(),
           onChanged: (String? newValue) {
             if (newValue != null) {
               setState(() {
@@ -669,10 +699,11 @@ class _FeedScreenState extends State<FeedScreen> with TickerProviderStateMixin{
               'Clear Tag',
               style: TextStyle(fontSize: 12, color: theme.colorScheme.error),
             ),
-            onPressed: () => setState(() {
-              _selectedTagFilter = 'All';
-              _applyFiltersAndSort();
-            }),
+            onPressed:
+                () => setState(() {
+                  _selectedTagFilter = 'All';
+                  _applyFiltersAndSort();
+                }),
             style: TextButton.styleFrom(
               padding: EdgeInsets.zero,
               visualDensity: VisualDensity.compact,
@@ -687,40 +718,49 @@ class _FeedScreenState extends State<FeedScreen> with TickerProviderStateMixin{
       height: 38,
       child: ListView(
         scrollDirection: Axis.horizontal,
-        children: _availableFilterTags.map((tag) {
-          final isSelected = _selectedTagFilter == tag;
-          return Padding(
-            padding: const EdgeInsets.only(right: 8.0),
-            child: FilterChip(
-              label: Text(tag, style: const TextStyle(fontSize: 12)),
-              selected: isSelected,
-              onSelected: (bool sel) => setState(() {
-                _selectedTagFilter = sel ? tag : 'All';
-                _applyFiltersAndSort();
-              }),
-              selectedColor: theme.colorScheme.primaryContainer,
-              checkmarkColor: theme.colorScheme.onPrimaryContainer,
-              labelStyle: TextStyle(
-                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                fontSize: 12,
-                color: isSelected
-                    ? theme.colorScheme.onPrimaryContainer
-                    : theme.textTheme.bodySmall?.color,
-              ),
-              backgroundColor: theme.colorScheme.surfaceContainerHighest.withAlpha(76),
-              shape: StadiumBorder(
-                side: BorderSide(
-                  color: isSelected
-                      ? theme.colorScheme.primary.withAlpha(178)
-                      : Colors.grey.shade400,
-                  width: 0.8,
+        children:
+            _availableFilterTags.map((tag) {
+              final isSelected = _selectedTagFilter == tag;
+              return Padding(
+                padding: const EdgeInsets.only(right: 8.0),
+                child: FilterChip(
+                  label: Text(tag, style: const TextStyle(fontSize: 12)),
+                  selected: isSelected,
+                  onSelected:
+                      (bool sel) => setState(() {
+                        _selectedTagFilter = sel ? tag : 'All';
+                        _applyFiltersAndSort();
+                      }),
+                  selectedColor: theme.colorScheme.primaryContainer,
+                  checkmarkColor: theme.colorScheme.onPrimaryContainer,
+                  labelStyle: TextStyle(
+                    fontWeight:
+                        isSelected ? FontWeight.bold : FontWeight.normal,
+                    fontSize: 12,
+                    color:
+                        isSelected
+                            ? theme.colorScheme.onPrimaryContainer
+                            : theme.textTheme.bodySmall?.color,
+                  ),
+                  backgroundColor: theme.colorScheme.surfaceContainerHighest
+                      .withAlpha(76),
+                  shape: StadiumBorder(
+                    side: BorderSide(
+                      color:
+                          isSelected
+                              ? theme.colorScheme.primary.withAlpha(178)
+                              : Colors.grey.shade400,
+                      width: 0.8,
+                    ),
+                  ),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 2,
+                  ),
+                  visualDensity: VisualDensity.compact,
                 ),
-              ),
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-              visualDensity: VisualDensity.compact,
-            ),
-          );
-        }).toList(),
+              );
+            }).toList(),
       ),
     );
   }
@@ -741,7 +781,7 @@ class _FeedScreenState extends State<FeedScreen> with TickerProviderStateMixin{
 
   Widget _buildPostsList() {
     final theme = Theme.of(context);
-    
+
     if (_isLoading && _posts.isEmpty) {
       return Center(
         child: CircularProgressIndicator(color: theme.colorScheme.primary),
@@ -787,93 +827,107 @@ class _FeedScreenState extends State<FeedScreen> with TickerProviderStateMixin{
 
   Widget _buildErrorState(ThemeData theme) {
     return LayoutBuilder(
-      builder: (context, constraints) => SingleChildScrollView(
-        physics: const AlwaysScrollableScrollPhysics(),
-        child: ConstrainedBox(
-          constraints: BoxConstraints(minHeight: constraints.maxHeight),
-          child: Center(
-            child: Padding(
-              padding: const EdgeInsets.all(24.0),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.error_outline, size: 70, color: Colors.grey[400]),
-                  const SizedBox(height: 20),
-                  Text(
-                    'Failed to Load Posts',
-                    style: theme.textTheme.headlineSmall?.copyWith(
-                      color: Colors.grey[700],
-                    ),
+      builder:
+          (context, constraints) => SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            child: ConstrainedBox(
+              constraints: BoxConstraints(minHeight: constraints.maxHeight),
+              child: Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(24.0),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.error_outline,
+                        size: 70,
+                        color: Colors.grey[400],
+                      ),
+                      const SizedBox(height: 20),
+                      Text(
+                        'Failed to Load Posts',
+                        style: theme.textTheme.headlineSmall?.copyWith(
+                          color: Colors.grey[700],
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      Text(
+                        _loadError ??
+                            'An unknown error occurred. Pull down to try again.',
+                        style: theme.textTheme.bodyLarge?.copyWith(
+                          color: Colors.grey[600],
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 10),
-                  Text(
-                    _loadError ?? 'An unknown error occurred. Pull down to try again.',
-                    style: theme.textTheme.bodyLarge?.copyWith(
-                      color: Colors.grey[600],
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                ],
+                ),
               ),
             ),
           ),
-        ),
-      ),
     );
   }
 
   Widget _buildEmptyState(ThemeData theme) {
-    final hasFilters = _searchController.text.isNotEmpty || _selectedTagFilter != 'All';
-    
+    final hasFilters =
+        _searchController.text.isNotEmpty || _selectedTagFilter != 'All';
+
     return LayoutBuilder(
-      builder: (context, constraints) => SingleChildScrollView(
-        physics: const AlwaysScrollableScrollPhysics(),
-        child: ConstrainedBox(
-          constraints: BoxConstraints(minHeight: constraints.maxHeight),
-          child: Center(
-            child: Padding(
-              padding: const EdgeInsets.all(24.0),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.filter_drama_outlined, size: 70, color: Colors.grey[400]),
-                  const SizedBox(height: 20),
-                  Text(
-                    hasFilters ? 'No Posts Match Your Criteria' : 'No Posts Yet!',
-                    style: theme.textTheme.headlineSmall?.copyWith(
-                      color: Colors.grey[700],
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 10),
-                  Text(
-                    hasFilters
-                        ? 'Try adjusting your search or filters.'
-                        : 'Be the first to share something interesting!',
-                    style: theme.textTheme.bodyLarge?.copyWith(
-                      color: Colors.grey[600],
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 20),
-                  if (!hasFilters)
-                    ElevatedButton.icon(
-                      icon: const Icon(Icons.add_circle_outline),
-                      label: const Text('Add a Post'),
-                      onPressed: _showAddPostDialog,
-                      style: ElevatedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 20,
-                          vertical: 12,
-                        ),
+      builder:
+          (context, constraints) => SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            child: ConstrainedBox(
+              constraints: BoxConstraints(minHeight: constraints.maxHeight),
+              child: Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(24.0),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.filter_drama_outlined,
+                        size: 70,
+                        color: Colors.grey[400],
                       ),
-                    ),
-                ],
+                      const SizedBox(height: 20),
+                      Text(
+                        hasFilters
+                            ? 'No Posts Match Your Criteria'
+                            : 'No Posts Yet!',
+                        style: theme.textTheme.headlineSmall?.copyWith(
+                          color: Colors.grey[700],
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 10),
+                      Text(
+                        hasFilters
+                            ? 'Try adjusting your search or filters.'
+                            : 'Be the first to share something interesting!',
+                        style: theme.textTheme.bodyLarge?.copyWith(
+                          color: Colors.grey[600],
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 20),
+                      if (!hasFilters)
+                        ElevatedButton.icon(
+                          icon: const Icon(Icons.add_circle_outline),
+                          label: const Text('Add a Post'),
+                          onPressed: _showAddPostDialog,
+                          style: ElevatedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 20,
+                              vertical: 12,
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
               ),
             ),
           ),
-        ),
-      ),
     );
   }
 
@@ -893,7 +947,8 @@ class _FeedScreenState extends State<FeedScreen> with TickerProviderStateMixin{
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final hasActiveFilters = _selectedTagFilter != 'All' ||
+    final hasActiveFilters =
+        _selectedTagFilter != 'All' ||
         _sortBy != 'Recent' ||
         _sortBy != 'Default' ||
         _searchController.text.isNotEmpty;
@@ -906,7 +961,10 @@ class _FeedScreenState extends State<FeedScreen> with TickerProviderStateMixin{
               elevation: 1.0,
               color: theme.canvasColor,
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16.0,
+                  vertical: 12.0,
+                ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [

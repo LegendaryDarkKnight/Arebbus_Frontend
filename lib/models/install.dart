@@ -7,12 +7,7 @@ class Install {
   final User? user;
   final Bus? bus;
 
-  Install({
-    required this.userId,
-    required this.busId,
-    this.user,
-    this.bus,
-  });
+  Install({required this.userId, required this.busId, this.user, this.bus});
 
   factory Install.fromJson(Map<String, dynamic> json) {
     return Install(
@@ -32,12 +27,7 @@ class Install {
     };
   }
 
-  Install copyWith({
-    int? userId,
-    int? busId,
-    User? user,
-    Bus? bus,
-  }) {
+  Install copyWith({int? userId, int? busId, User? user, Bus? bus}) {
     return Install(
       userId: userId ?? this.userId,
       busId: busId ?? this.busId,

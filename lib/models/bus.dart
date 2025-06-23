@@ -40,7 +40,10 @@ class Bus {
       basedOn: json['based_on'] ?? json['basedOn'],
       author: json['author'] != null ? User.fromJson(json['author']) : null,
       route: json['route'] != null ? Route.fromJson(json['route']) : null,
-      basedOnBus: json['based_on_bus'] != null ? Bus.fromJson(json['based_on_bus']) : null,
+      basedOnBus:
+          json['based_on_bus'] != null
+              ? Bus.fromJson(json['based_on_bus'])
+              : null,
     );
   }
 

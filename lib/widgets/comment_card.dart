@@ -19,8 +19,9 @@ class CommentCard extends StatelessWidget {
       return '${difference.inMinutes}m ago';
     } else if (difference.inHours < 24) {
       return '${difference.inHours}h ago';
-    } else if (difference.inDays < 1) { // Yesterday
-        return 'Yesterday at ${DateFormat.jm().format(timestamp)}';
+    } else if (difference.inDays < 1) {
+      // Yesterday
+      return 'Yesterday at ${DateFormat.jm().format(timestamp)}';
     } else if (difference.inDays < 7) {
       return '${difference.inDays}d ago';
     } else {
@@ -42,16 +43,20 @@ class CommentCard extends StatelessWidget {
         children: [
           CircleAvatar(
             radius: 18,
-            backgroundColor: theme.colorScheme.surfaceVariant,
-            backgroundImage: (authorImageUrl != null && authorImageUrl.isNotEmpty)
-                ? NetworkImage(authorImageUrl)
-                : null,
-            child: (authorImageUrl == null || authorImageUrl.isEmpty)
-                ? Text(
-                    authorName.isNotEmpty ? authorName[0].toUpperCase() : 'S',
-                    style: TextStyle(color: theme.colorScheme.onSurfaceVariant),
-                  )
-                : null,
+            backgroundColor: theme.colorScheme.surfaceContainerHighest,
+            backgroundImage:
+                (authorImageUrl != null && authorImageUrl.isNotEmpty)
+                    ? NetworkImage(authorImageUrl)
+                    : null,
+            child:
+                (authorImageUrl == null || authorImageUrl.isEmpty)
+                    ? Text(
+                      authorName.isNotEmpty ? authorName[0].toUpperCase() : 'S',
+                      style: TextStyle(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    )
+                    : null,
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -59,9 +64,15 @@ class CommentCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 8,
+                  ),
                   decoration: BoxDecoration(
-                    color: theme.colorScheme.surfaceContainerHighest, // Slightly different background for comment bubble
+                    color:
+                        theme
+                            .colorScheme
+                            .surfaceContainerHighest, // Slightly different background for comment bubble
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Column(
@@ -82,7 +93,7 @@ class CommentCard extends StatelessWidget {
                         ),
                       ),
                     ],
-                  )
+                  ),
                 ),
                 const SizedBox(height: 4),
                 Padding(

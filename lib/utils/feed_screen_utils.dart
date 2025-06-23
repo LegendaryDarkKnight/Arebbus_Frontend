@@ -561,23 +561,24 @@ class FeedScreenUtils {
     required List<Post> filteredPosts,
     required Comment comment,
   }) {
-    final updatedPosts = posts.map((post) {
-      if (post.id == comment.postId) {
-        final updatedComments = [...?post.comments, comment];
-        return post.copyWith(comments: updatedComments);
-      }
-      return post;
-    }).toList();
+    final updatedPosts =
+        posts.map((post) {
+          if (post.id == comment.postId) {
+            final updatedComments = [...?post.comments, comment];
+            return post.copyWith(comments: updatedComments);
+          }
+          return post;
+        }).toList();
 
-    final updatedFilteredPosts = filteredPosts.map((post) {
-      if (post.id == comment.postId) {
-        final updatedComments = [...?post.comments, comment];
-        return post.copyWith(comments: updatedComments);
-      }
-      return post;
-    }).toList();
+    final updatedFilteredPosts =
+        filteredPosts.map((post) {
+          if (post.id == comment.postId) {
+            final updatedComments = [...?post.comments, comment];
+            return post.copyWith(comments: updatedComments);
+          }
+          return post;
+        }).toList();
 
     return {'posts': updatedPosts, 'filteredPosts': updatedFilteredPosts};
   }
-
 }

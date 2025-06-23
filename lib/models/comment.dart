@@ -8,7 +8,8 @@ class Comment {
   final int postId;
   final int numUpvote;
   final User? author;
-  final Post? post; // Be cautious with circular dependencies if Post also holds List<Comment>
+  final Post?
+  post; // Be cautious with circular dependencies if Post also holds List<Comment>
   final DateTime timestamp;
 
   Comment({
@@ -32,9 +33,12 @@ class Comment {
       author: json['author'] != null ? User.fromJson(json['author']) : null,
       post: json['post'] != null ? Post.fromJson(json['post']) : null,
       // Ensure 'timestamp' is correctly parsed. Assuming it's an ISO 8601 string.
-      timestamp: json['timestamp'] != null
-          ? DateTime.parse(json['timestamp'])
-          :json['createdAt']!=null ? DateTime.parse(json['createdAt']):DateTime.now(), // Fallback, ideally timestamp should always be present
+      timestamp:
+          json['timestamp'] != null
+              ? DateTime.parse(json['timestamp'])
+              : json['createdAt'] != null
+              ? DateTime.parse(json['createdAt'])
+              : DateTime.now(), // Fallback, ideally timestamp should always be present
     );
   }
 
@@ -81,7 +85,10 @@ class Comment {
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
-    return other is Comment && other.id == id && other.timestamp == timestamp; // Consider timestamp for equality if ID can be null for new comments
+    return other is Comment &&
+        other.id == id &&
+        other.timestamp ==
+            timestamp; // Consider timestamp for equality if ID can be null for new comments
   }
 
   @override

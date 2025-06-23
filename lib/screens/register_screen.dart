@@ -10,7 +10,7 @@ class ApiConfig {
       "BASE_URL",
       defaultValue: "http://localhost:6996",
     );
-    
+
     final dio = Dio(
       BaseOptions(
         baseUrl: baseUrl,
@@ -20,8 +20,10 @@ class ApiConfig {
         extra: kIsWeb ? {'withCredentials': true} : null,
       ),
     );
-    
-    debugPrint('Dio initialized for ${kIsWeb ? 'web' : 'mobile/desktop'} platform');
+
+    debugPrint(
+      'Dio initialized for ${kIsWeb ? 'web' : 'mobile/desktop'} platform',
+    );
     return dio;
   }
 }
@@ -138,35 +140,39 @@ class _RegisterScreenState extends State<RegisterScreen> {
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) => AlertDialog(
-        title: const Text('Registration Successful'),
-        content: const Text('Your account has been created successfully. You can now sign in.'),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context); // Close dialog
-              Navigator.pushNamed(context,'/'); // Go back to login screen
-            },
-            child: const Text('OK'),
+      builder:
+          (context) => AlertDialog(
+            title: const Text('Registration Successful'),
+            content: const Text(
+              'Your account has been created successfully. You can now sign in.',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.pop(context); // Close dialog
+                  Navigator.pushNamed(context, '/'); // Go back to login screen
+                },
+                child: const Text('OK'),
+              ),
+            ],
           ),
-        ],
-      ),
     );
   }
 
   void _showErrorDialog(String message) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Registration Error'),
-        content: Text(message),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('OK'),
+      builder:
+          (context) => AlertDialog(
+            title: const Text('Registration Error'),
+            content: Text(message),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('OK'),
+              ),
+            ],
           ),
-        ],
-      ),
     );
   }
 
@@ -248,10 +254,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   Widget _buildSubtitle() {
     return Text(
       'Join Arebbus today',
-      style: TextStyle(
-        fontSize: 16,
-        color: Colors.grey.shade600,
-      ),
+      style: TextStyle(fontSize: 16, color: Colors.grey.shade600),
     );
   }
 
@@ -260,7 +263,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
       padding: const EdgeInsets.all(RegisterScreenConstants.padding),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(RegisterScreenConstants.borderRadius),
+        borderRadius: BorderRadius.circular(
+          RegisterScreenConstants.borderRadius,
+        ),
         boxShadow: const [
           BoxShadow(
             color: RegisterScreenConstants.shadowColor,
@@ -295,7 +300,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
               obscureText: _obscurePassword,
               suffixIcon: _buildPasswordToggle(
                 isObscured: _obscurePassword,
-                onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+                onPressed:
+                    () => setState(() => _obscurePassword = !_obscurePassword),
               ),
               validator: FormValidator.validatePassword,
             ),
@@ -307,9 +313,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
               obscureText: _obscureConfirmPassword,
               suffixIcon: _buildPasswordToggle(
                 isObscured: _obscureConfirmPassword,
-                onPressed: () => setState(() => _obscureConfirmPassword = !_obscureConfirmPassword),
+                onPressed:
+                    () => setState(
+                      () => _obscureConfirmPassword = !_obscureConfirmPassword,
+                    ),
               ),
-              validator: (value) => FormValidator.validateConfirmPassword(value, _passwordController.text),
+              validator:
+                  (value) => FormValidator.validateConfirmPassword(
+                    value,
+                    _passwordController.text,
+                  ),
             ),
             const SizedBox(height: RegisterScreenConstants.spacingMedium),
             _buildRegisterButton(),
@@ -337,22 +350,33 @@ class _RegisterScreenState extends State<RegisterScreen> {
         prefixIcon: Icon(icon),
         suffixIcon: suffixIcon,
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(RegisterScreenConstants.borderRadius),
+          borderRadius: BorderRadius.circular(
+            RegisterScreenConstants.borderRadius,
+          ),
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(RegisterScreenConstants.borderRadius),
+          borderRadius: BorderRadius.circular(
+            RegisterScreenConstants.borderRadius,
+          ),
           borderSide: BorderSide(color: Colors.grey.shade300),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(RegisterScreenConstants.borderRadius),
-          borderSide: const BorderSide(color: RegisterScreenConstants.primaryColor),
+          borderRadius: BorderRadius.circular(
+            RegisterScreenConstants.borderRadius,
+          ),
+          borderSide: const BorderSide(
+            color: RegisterScreenConstants.primaryColor,
+          ),
         ),
       ),
       validator: validator,
     );
   }
 
-  Widget _buildPasswordToggle({required bool isObscured, required VoidCallback onPressed}) {
+  Widget _buildPasswordToggle({
+    required bool isObscured,
+    required VoidCallback onPressed,
+  }) {
     return IconButton(
       icon: Icon(isObscured ? Icons.visibility : Icons.visibility_off),
       onPressed: onPressed,
@@ -369,26 +393,26 @@ class _RegisterScreenState extends State<RegisterScreen> {
           backgroundColor: RegisterScreenConstants.primaryColor,
           foregroundColor: Colors.white,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(RegisterScreenConstants.borderRadius),
+            borderRadius: BorderRadius.circular(
+              RegisterScreenConstants.borderRadius,
+            ),
           ),
           elevation: 2,
         ),
-        child: _isLoading
-            ? const SizedBox(
-                height: 20,
-                width: 20,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+        child:
+            _isLoading
+                ? const SizedBox(
+                  height: 20,
+                  width: 20,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                  ),
+                )
+                : const Text(
+                  'Create Account',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
                 ),
-              )
-            : const Text(
-                'Create Account',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
       ),
     );
   }

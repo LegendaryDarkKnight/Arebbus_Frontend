@@ -57,4 +57,3 @@ class WaitingFor {
     return 'WaitingFor{userId: $userId, busId: $busId, valid: $valid}';
   }
 }
-

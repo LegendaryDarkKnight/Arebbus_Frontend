@@ -6,12 +6,7 @@ class Route {
   final int authorId;
   final User? author;
 
-  Route({
-    this.id,
-    required this.name,
-    required this.authorId,
-    this.author,
-  });
+  Route({this.id, required this.name, required this.authorId, this.author});
 
   factory Route.fromJson(Map<String, dynamic> json) {
     return Route(
@@ -31,12 +26,7 @@ class Route {
     };
   }
 
-  Route copyWith({
-    int? id,
-    String? name,
-    int? authorId,
-    User? author,
-  }) {
+  Route copyWith({int? id, String? name, int? authorId, User? author}) {
     return Route(
       id: id ?? this.id,
       name: name ?? this.name,

@@ -1,6 +1,3 @@
-import 'dart:convert' show jsonDecode;
-import 'package:flutter/services.dart' show rootBundle;
-
 class AppConfig {
   static late AppConfig _instance;
 
@@ -47,7 +44,10 @@ class AppConfig {
   // }
 
   static Future<void> initializeFromEnv() async {
-    const apiBaseUrl = String.fromEnvironment("API_BASE_URL", defaultValue: "http://localhost:6996");
+    const apiBaseUrl = String.fromEnvironment(
+      "API_BASE_URL",
+      defaultValue: "http://localhost:6996",
+    );
     // const apiKey = String.fromEnvironment("apiKey", defaultValue: "dev-api-key");
     // const authDomain = String.fromEnvironment("AUTH_DOMAIN", defaultValue: "localhost-auth");
     // const projectId = String.fromEnvironment("PROJECT_ID", defaultValue: "dev-project");

@@ -109,7 +109,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     _isLoading = true;
     try {
       await ApiService.instance.logout();
-      if (mounted){
+      if (mounted) {
         Navigator.pushReplacementNamed(context, '/login');
       }
     } finally {

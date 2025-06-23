@@ -9,8 +9,6 @@ class BusDetailScreen extends StatefulWidget {
 class _BusDetailScreenState extends State<BusDetailScreen> {
   @override
   Widget build(BuildContext context) {
-    
-    return Scaffold(
-    );
+    return Scaffold();
   }
 }

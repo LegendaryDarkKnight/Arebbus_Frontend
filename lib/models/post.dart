@@ -31,16 +31,21 @@ class Post {
       authorId: json['author_id'] ?? json['authorId'],
       content: json['content'] ?? '',
       numUpvote: json['num_upvote'] ?? json['numUpvote'] ?? 0,
-      timestamp: json['timestamp'] != null 
-          ? DateTime.parse(json['timestamp']) 
-          : DateTime.now(),
+      timestamp:
+          json['timestamp'] != null
+              ? DateTime.parse(json['timestamp'])
+              : DateTime.now(),
       author: json['author'] != null ? User.fromJson(json['author']) : null,
-      tags: json['tags'] != null 
-          ? (json['tags'] as List).map((tag) => Tag.fromJson(tag)).toList()
-          : null,
-      comments: json['comments'] != null
-          ? (json['comments'] as List).map((comment) => Comment.fromJson(comment)).toList()
-          : null,
+      tags:
+          json['tags'] != null
+              ? (json['tags'] as List).map((tag) => Tag.fromJson(tag)).toList()
+              : null,
+      comments:
+          json['comments'] != null
+              ? (json['comments'] as List)
+                  .map((comment) => Comment.fromJson(comment))
+                  .toList()
+              : null,
       upvoted: json['upvoted'] ?? false,
     );
   }
@@ -55,7 +60,7 @@ class Post {
       'author': author?.toJson(),
       'tags': tags?.map((tag) => tag.toJson()).toList(),
       'comments': comments?.map((comment) => comment.toJson()).toList(),
-      'upvoted' : upvoted,
+      'upvoted': upvoted,
     };
   }
 

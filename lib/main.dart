@@ -55,9 +55,7 @@ class AuthWrapper extends StatelessWidget {
         // Show loading screen while checking auth status
         if (authProvider.isLoading) {
           return const Scaffold(
-            body: Center(
-              child: CircularProgressIndicator(),
-            ),
+            body: Center(child: CircularProgressIndicator()),
           );
         }
 
