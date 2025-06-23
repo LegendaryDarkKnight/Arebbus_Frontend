@@ -27,14 +27,14 @@ jobs:
           flutter-version: '3.29.3'
           channel: 'stable'
 
-      - name: Get dependencies
-        run: flutter pub get
-
-      # Add this step to accept Android SDK licenses
+      # Accept Android SDK licenses
       - name: Accept Android SDK licenses
         run: |
-          yes | sdkmanager --licenses > /dev/null
+          yes | flutter doctor --android-licenses
         shell: bash
+
+      - name: Get dependencies
+        run: flutter pub get
 
       # 2. Code Quality Checks
       - name: Analyze code
@@ -53,7 +53,15 @@ jobs:
             echo "⚠️ No unit tests found, skipping..."
           fi
 
-      # 4. Build APK with Environment Variables
+      # 4. Get version early for build
+      - name: Get version from pubspec.yaml
+        id: version
+        run: |
+          VERSION=$(grep 'version:' pubspec.yaml | cut -d ' ' -f 2 | tr -d '\r')
+          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+          echo "Arebbus version: $VERSION"
+
+      # 5. Build APK with Environment Variables
       - name: Build release APK
         env:
           API_BASE_URL: ${{ secrets.API_BASE_URL }}
@@ -68,19 +76,12 @@ jobs:
             --dart-define=GIT_COMMIT=${{ github.sha }} \
             --dart-define=BUILD_VERSION=${{ steps.version.outputs.VERSION }}
 
-      - name: Get version from pubspec.yaml
-        id: version
-        run: |
-          VERSION=$(grep 'version:' pubspec.yaml | cut -d ' ' -f 2 | tr -d '\r')
-          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
-          echo "Arebbus version: $VERSION"
-
       - name: Rename APK
         run: |
           mv build/app/outputs/flutter-apk/app-release.apk \
                build/app/outputs/flutter-apk/arebbus-${{ github.ref_name }}.apk
 
-      # 5. Integration Tests (if available)
+      # 6. Integration Tests (if available)
       - name: Run integration tests
         run: |
           if [ -d "integration_test" ] && [ -n "$(ls -A integration_test 2>/dev/null)" ]; then
@@ -91,7 +92,7 @@ jobs:
           fi
         continue-on-error: true
 
-      # 6. Create GitHub Release
+      # 7. Create GitHub Release
       - name: Create Release
         id: create_release
         uses: actions/create-release@v1
