@@ -29,9 +29,9 @@ jobs:
 
       # Accept Android SDK licenses
       - name: Accept Android SDK licenses
-        run: flutter doctor --android-licenses
+        run: |
+          yes | $ANDROID_HOME/tools/bin/sdkmanager --licenses
         shell: bash
-        continue-on-error: true
 
       - name: Get dependencies
         run: flutter pub get
