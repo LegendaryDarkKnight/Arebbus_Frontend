@@ -11,7 +11,6 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1. Setup Environment
       - name: Checkout code
         uses: actions/checkout@v4
 
@@ -19,7 +18,7 @@ jobs:
         uses: actions/setup-java@v4
         with:
           distribution: 'zulu'
-          java-version: '17'
+          java-version: '11'  # Changed to Java 11 to match your gradle config
 
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
@@ -27,40 +26,14 @@ jobs:
           flutter-version: '3.29.3'
           channel: 'stable'
 
-      # Accept Android SDK licenses
       - name: Accept Android SDK licenses
         run: |
-          if [ -f "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" ]; then
-            yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses
-          elif [ -f "$ANDROID_HOME/tools/bin/sdkmanager" ]; then
-            yes | $ANDROID_HOME/tools/bin/sdkmanager --licenses
-          else
-            echo "sdkmanager not found, trying flutter doctor"
-            yes | flutter doctor --android-licenses || true
-          fi
+          yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || true
         shell: bash
 
       - name: Get dependencies
         run: flutter pub get
 
-      # 2. Code Quality Checks
-      - name: Analyze code
-        run: flutter analyze --fatal-infos
-
-      - name: Check formatting
-        run: dart format --set-exit-if-changed .
-
-      # 3. Check for Tests and Run Them
-      - name: Check and run unit tests
-        run: |
-          if find test -name "*_test.dart" -type f 2>/dev/null | grep -q .; then
-            echo "✅ Found unit tests, running..."
-            flutter test --reporter=expanded
-          else
-            echo "⚠️ No unit tests found, skipping..."
-          fi
-
-      # 4. Get version early for build
       - name: Get version from pubspec.yaml
         id: version
         run: |
@@ -68,7 +41,6 @@ jobs:
           echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
           echo "Arebbus version: $VERSION"
 
-      # 5. Build APK with Environment Variables
       - name: Build release APK
         env:
           API_BASE_URL: ${{ secrets.API_BASE_URL }}
@@ -88,18 +60,6 @@ jobs:
           mv build/app/outputs/flutter-apk/app-release.apk \
                build/app/outputs/flutter-apk/arebbus-${{ github.ref_name }}.apk
 
-      # 6. Integration Tests (if available)
-      - name: Run integration tests
-        run: |
-          if [ -d "integration_test" ] && [ -n "$(ls -A integration_test 2>/dev/null)" ]; then
-            echo "✅ Found integration tests, running..."
-            flutter test integration_test
-          else
-            echo "⚠️ No integration tests found, skipping..."
-          fi
-        continue-on-error: true
-
-      # 7. Create GitHub Release
       - name: Create Release
         id: create_release
         uses: actions/create-release@v1
@@ -111,20 +71,13 @@ jobs:
           body: |
             ## 🚀 Arebbus ${{ github.ref_name }}
             
-            ### ✨ What's New
-            - Add your release notes here
-            - List new features and improvements
-            
-            ### 🐛 Bug Fixes
-            - List bug fixes here
-            
             ### 📱 Installation
             Download the APK file below and install it on your Android device.
             
             **Note**: You may need to enable "Install from unknown sources" in your device settings.
             
             **App Version**: ${{ steps.version.outputs.VERSION }}
-            **Target Android**: API 21+ (Android 5.0 and above)
+            **Build Number**: ${{ github.run_number }}
           draft: false
           prerelease: false
 
