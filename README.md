@@ -29,35 +29,24 @@ flutter pub get
 
 ### 3. Configure the Environment
 To ensure Arebbus runs smoothly, create the configuration files:
-- In the project root, create an `assets` folder.
-- Inside `assets`, create a `config` folder.
-- Add an `env.json` file in the `config` folder with the following structure:
-```json
-{
-    "API_BASE_URL": "",
-    "apiKey": "",
-    "authDomain": "",
-    "projectId": "",
-    "storageBucket": "",
-    "messagingSenderId": "",
-    "appId": "",
-    "measurementId": "",
-    "ENVIRONMENT_NAME": ""
-}
-```
+- **API_BASE_URL** : *Url of api gateway of backend*
+
 Fill in the values (e.g., API keys, Firebase configs) based on your setup. This file is the heart of Arebbus' connection to external services! 💡
 
 ### 4. Run the App
 Launch the app on your emulator or connected Android device:
 ```bash
-flutter run
+flutter run --dart-define=API_BASE_URL={API_BASE_URL}
 ```
 Pro tip: Use `flutter run --release` for a smoother, optimized experience. 🚀
 
 ### 5. Build the APK
 Ready to share Arebbus with the world? Build the Android APK:
 ```bash
-flutter build apk --release
+flutter build apk --release \
+  --dart-define=API_BASE_URL="1.2.3.4:8080" \
+  --dart-define=APP_NAME="Arebbus"
+  
 ```
 The APK will be generated in `build/app/outputs/flutter-apk/app-release.apk`. Share it, install it, and let the bus-tracking magic begin! 🚌
 
