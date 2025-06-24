@@ -24,6 +24,40 @@ jobs:
         with:
           flutter-version: '3.29.3'
           channel: 'stable'
+          cache: true  # Enable Flutter SDK caching
+          cache-key: 'flutter-3.29.3'
+
+      - name: Cache Flutter dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.pub-cache
+            .dart_tool
+            .packages
+          key: ${{ runner.os }}-flutter-deps-${{ hashFiles('**/pubspec.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-flutter-deps-
+
+      - name: Cache Gradle dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+            android/.gradle
+          key: ${{ runner.os }}-gradle-${{ hashFiles('android/gradle/wrapper/gradle-wrapper.properties', 'android/build.gradle', 'android/app/build.gradle') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+
+      - name: Cache Android SDK
+        uses: actions/cache@v4
+        with:
+          path: |
+            ${{ env.ANDROID_SDK_ROOT }}
+            ${{ env.ANDROID_HOME }}
+          key: ${{ runner.os }}-android-sdk-${{ hashFiles('android/build.gradle', 'android/app/build.gradle') }}
+          restore-keys: |
+            ${{ runner.os }}-android-sdk-
 
       - name: Accept Android SDK licenses
         run: |
@@ -66,6 +100,70 @@ jobs:
           path: build/app/outputs/flutter-apk/arebbus-v${{ steps.version.outputs.VERSION }}-build${{ github.run_number }}.apk
           retention-days: 30
 
+      - name: Generate APK checksum
+        id: checksum
+        run: |
+          APK_PATH="build/app/outputs/flutter-apk/arebbus-v${{ steps.version.outputs.VERSION }}-build${{ github.run_number }}.apk"
+          CHECKSUM=$(sha256sum "$APK_PATH" | cut -d ' ' -f 1)
+          echo "CHECKSUM=$CHECKSUM" >> $GITHUB_OUTPUT
+          echo "APK SHA256: $CHECKSUM"
+
+      - name: Create Release Tag
+        id: create_tag
+        run: |
+          TAG_NAME="v${{ steps.version.outputs.VERSION }}-build${{ github.run_number }}"
+          echo "TAG_NAME=$TAG_NAME" >> $GITHUB_OUTPUT
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git tag -a "$TAG_NAME" -m "Release $TAG_NAME"
+          git push origin "$TAG_NAME"
+        env:
+          GITHUB_TOKEN: ${{ secrets.ACCESS_TOKEN }}
+
+      - name: Create GitHub Release
+        uses: actions/create-release@v1
+        id: create_release
+        env:
+          GITHUB_TOKEN: ${{ secrets.ACCESS_TOKEN }}
+        with:
+          tag_name: ${{ steps.create_tag.outputs.TAG_NAME }}
+          release_name: "Arebbus v${{ steps.version.outputs.VERSION }} Build ${{ github.run_number }}"
+          body: |
+            ## 🚀 Arebbus Release v${{ steps.version.outputs.VERSION }}
+            
+            ### 📱 Build Information
+            - **Version**: ${{ steps.version.outputs.VERSION }}
+            - **Build Number**: ${{ github.run_number }}
+            - **Git Commit**: ${{ github.sha }}
+            - **Build Date**: ${{ github.event.head_commit.timestamp }}
+            
+            ### 🔒 Security
+            - **APK SHA256**: `${{ steps.checksum.outputs.CHECKSUM }}`
+            
+            ### 📋 What's Changed
+            Recent commits in this release:
+            ${{ github.event.head_commit.message }}
+            
+            ### 📥 Installation
+            1. Download the APK file below
+            2. Enable "Install from Unknown Sources" in your Android settings
+            3. Install the APK
+            
+            ### ⚠️ Note
+            This is an automated release generated from the main branch.
+          draft: false
+          prerelease: false
+
+      - name: Upload APK to Release
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.ACCESS_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: build/app/outputs/flutter-apk/arebbus-v${{ steps.version.outputs.VERSION }}-build${{ github.run_number }}.apk
+          asset_name: arebbus-v${{ steps.version.outputs.VERSION }}-build${{ github.run_number }}.apk
+          asset_content_type: application/vnd.android.package-archive
+
       - name: Build Summary
         run: |
           echo "## 🚀 Build Summary" >> $GITHUB_STEP_SUMMARY
@@ -73,5 +171,9 @@ jobs:
           echo "- **Build Number**: ${{ github.run_number }}" >> $GITHUB_STEP_SUMMARY
           echo "- **Git Commit**: ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
           echo "- **APK Name**: arebbus-v${{ steps.version.outputs.VERSION }}-build${{ github.run_number }}.apk" >> $GITHUB_STEP_SUMMARY
+          echo "- **Release Tag**: v${{ steps.version.outputs.VERSION }}-build${{ github.run_number }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **APK SHA256**: ${{ steps.checksum.outputs.CHECKSUM }}" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "📱 **Download the APK from the Artifacts section above**" >> $GITHUB_STEP_SUMMARY
+          echo "📱 **Download Options**:" >> $GITHUB_STEP_SUMMARY
+          echo "- From GitHub Releases: [v${{ steps.version.outputs.VERSION }}-build${{ github.run_number }}](${{ github.server_url }}/${{ github.repository }}/releases/tag/v${{ steps.version.outputs.VERSION }}-build${{ github.run_number }})" >> $GITHUB_STEP_SUMMARY
+          echo "- From Artifacts section above" >> $GITHUB_STEP_SUMMARY
