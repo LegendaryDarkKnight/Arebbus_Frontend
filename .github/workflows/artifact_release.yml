@@ -37,7 +37,7 @@ jobs:
         run: |
           echo "Running Flutter tests..."
           flutter test --coverage --reporter=expanded
-          echo "✅ All tests passed!"
+          echo " All tests passed!"
 
       - name: Upload test coverage
         uses: actions/upload-artifact@v4
@@ -49,8 +49,8 @@ jobs:
 
       - name: Test Summary
         run: |
-          echo "## 🧪 Test Results" >> $GITHUB_STEP_SUMMARY
-          echo "- **Status**: ✅ All tests passed" >> $GITHUB_STEP_SUMMARY
+          echo "##  Test Results" >> $GITHUB_STEP_SUMMARY
+          echo "- **Status**:  All tests passed" >> $GITHUB_STEP_SUMMARY
           echo "- **Test Directory**: test/" >> $GITHUB_STEP_SUMMARY
           echo "- **Coverage Report**: Available in artifacts" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
@@ -58,8 +58,8 @@ jobs:
 
       - name: Test Failure Summary
         run: |
-          echo "## 🧪 Test Results" >> $GITHUB_STEP_SUMMARY
-          echo "- **Status**: ❌ Tests failed" >> $GITHUB_STEP_SUMMARY
+          echo "##  Test Results" >> $GITHUB_STEP_SUMMARY
+          echo "- **Status**:  Tests failed" >> $GITHUB_STEP_SUMMARY
           echo "- **Action**: Build process stopped due to test failures" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
         if: failure()
@@ -121,7 +121,7 @@ jobs:
           tag_name: ${{ steps.create_tag.outputs.TAG_NAME }}
           release_name: "Arebbus v${{ steps.version.outputs.VERSION }} Build ${{ github.run_number }}"
           body: |
-            ## 🚀 Arebbus Release v${{ steps.version.outputs.VERSION }}
+            ##  Arebbus Release v${{ steps.version.outputs.VERSION }}
             
             ### 📱 Build Information
             - **Version**: ${{ steps.version.outputs.VERSION }}
@@ -129,11 +129,11 @@ jobs:
             - **Git Commit**: ${{ github.sha }}
             - **Build Date**: ${{ github.event.head_commit.timestamp }}
             
-            ### 🔒 Security
+            ###  Security
             - **APK SHA256**: `${{ steps.checksum.outputs.CHECKSUM }}`
             
-            ### 🧪 Testing
-            - **Tests**: ✅ All tests passed
+            ###  Testing
+            - **Tests**:  All tests passed
             - **Coverage**: Coverage report included in build artifacts
             
             ### 📋 What's Changed
@@ -145,7 +145,7 @@ jobs:
             2. Enable "Install from Unknown Sources" in your Android settings
             3. Install the APK
             
-            ### ⚠️ Note
+            ### ⚠ Note
             This is an automated release generated from the main branch.
           draft: false
           prerelease: false
@@ -169,15 +169,15 @@ jobs:
 
       - name: Build Summary
         run: |
-          echo "## 🚀 Build Summary" >> $GITHUB_STEP_SUMMARY
+          echo "##  Build Summary" >> $GITHUB_STEP_SUMMARY
           echo "- **App Version**: ${{ steps.version.outputs.VERSION }}" >> $GITHUB_STEP_SUMMARY
           echo "- **Build Number**: ${{ github.run_number }}" >> $GITHUB_STEP_SUMMARY
           echo "- **Git Commit**: ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
           echo "- **APK Name**: arebbus-v${{ steps.version.outputs.VERSION }}-build${{ github.run_number }}.apk" >> $GITHUB_STEP_SUMMARY
           echo "- **Release Tag**: v${{ steps.version.outputs.VERSION }}-build${{ github.run_number }}" >> $GITHUB_STEP_SUMMARY
           echo "- **APK SHA256**: ${{ steps.checksum.outputs.CHECKSUM }}" >> $GITHUB_STEP_SUMMARY
-          echo "- **Tests**: ✅ All tests passed" >> $GITHUB_STEP_SUMMARY
+          echo "- **Tests**:  All tests passed" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "📱 **Download Options**:" >> $GITHUB_STEP_SUMMARY
+          echo " **Download Options**:" >> $GITHUB_STEP_SUMMARY
           echo "- From GitHub Releases: [v${{ steps.version.outputs.VERSION }}-build${{ github.run_number }}](${{ github.server_url }}/${{ github.repository }}/releases/tag/v${{ steps.version.outputs.VERSION }}-build${{ github.run_number }})" >> $GITHUB_STEP_SUMMARY
           echo "- From Artifacts section above" >> $GITHUB_STEP_SUMMARY
