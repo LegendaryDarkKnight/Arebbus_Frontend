@@ -24,40 +24,6 @@ jobs:
         with:
           flutter-version: '3.29.3'
           channel: 'stable'
-          cache: true  # Enable Flutter SDK caching
-          cache-key: 'flutter-3.29.3'
-
-      - name: Cache Flutter dependencies
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.pub-cache
-            .dart_tool
-            .packages
-          key: ${{ runner.os }}-flutter-deps-${{ hashFiles('**/pubspec.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-flutter-deps-
-
-      - name: Cache Gradle dependencies
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.gradle/caches
-            ~/.gradle/wrapper
-            android/.gradle
-          key: ${{ runner.os }}-gradle-${{ hashFiles('android/gradle/wrapper/gradle-wrapper.properties', 'android/build.gradle', 'android/app/build.gradle') }}
-          restore-keys: |
-            ${{ runner.os }}-gradle-
-
-      - name: Cache Android SDK
-        uses: actions/cache@v4
-        with:
-          path: |
-            ${{ env.ANDROID_SDK_ROOT }}
-            ${{ env.ANDROID_HOME }}
-          key: ${{ runner.os }}-android-sdk-${{ hashFiles('android/build.gradle', 'android/app/build.gradle') }}
-          restore-keys: |
-            ${{ runner.os }}-android-sdk-
 
       - name: Accept Android SDK licenses
         run: |
@@ -92,13 +58,6 @@ jobs:
         run: |
           mv build/app/outputs/flutter-apk/app-release.apk \
                build/app/outputs/flutter-apk/arebbus-v${{ steps.version.outputs.VERSION }}-build${{ github.run_number }}.apk
-
-      - name: Upload APK as Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: arebbus-apk-v${{ steps.version.outputs.VERSION }}-build${{ github.run_number }}
-          path: build/app/outputs/flutter-apk/arebbus-v${{ steps.version.outputs.VERSION }}-build${{ github.run_number }}.apk
-          retention-days: 30
 
       - name: Generate APK checksum
         id: checksum
@@ -163,6 +122,13 @@ jobs:
           asset_path: build/app/outputs/flutter-apk/arebbus-v${{ steps.version.outputs.VERSION }}-build${{ github.run_number }}.apk
           asset_name: arebbus-v${{ steps.version.outputs.VERSION }}-build${{ github.run_number }}.apk
           asset_content_type: application/vnd.android.package-archive
+
+      - name: Upload APK as Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: arebbus-apk-v${{ steps.version.outputs.VERSION }}-build${{ github.run_number }}
+          path: build/app/outputs/flutter-apk/arebbus-v${{ steps.version.outputs.VERSION }}-build${{ github.run_number }}.apk
+          retention-days: 30
 
       - name: Build Summary
         run: |
