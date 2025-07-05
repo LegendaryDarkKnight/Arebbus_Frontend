@@ -8,11 +8,11 @@ import 'package:arebbus/models/addon.dart';
 
 class NewMockDataService {
   static final String placeHolder = 'https://picsum.photos/200';
+
   static final User currentUser = User(
-    id: 1,
     name: 'Imtiaz',
     email: 'imtiaz@buet.ac.bd',
-    image: placeHolder, // Teal background, white text
+    image: placeHolder,
     reputation: 150,
     valid: true,
   );
@@ -155,235 +155,156 @@ class NewMockDataService {
   }
 
   static List<Post> getMockPosts() {
-    // Mock users with realistic data
-    final users = [
-      User(
-        id: 1,
-        name: 'Alice Smith',
-        email: 'alice.smith@example.com',
-        image: placeHolder,
-        reputation: 120,
-        valid: true,
-        latitude: 40.7128,
-        longitude: -74.0060,
-        createdAt: DateTime(2024, 10, 15),
-        updatedAt: DateTime.now().subtract(const Duration(days: 2)),
-      ),
-      User(
-        id: 2,
-        name: 'Bob Johnson',
-        email: 'bob.johnson@example.com',
-        image: placeHolder,
-        reputation: 85,
-        valid: true,
-        latitude: 40.7300,
-        longitude: -73.9900,
-        createdAt: DateTime(2024, 9, 20),
-        updatedAt: DateTime.now().subtract(const Duration(days: 1)),
-      ),
-      User(
-        id: 3,
-        name: 'Charlie Brown',
-        email: 'charlie.brown@example.com',
-        image: placeHolder,
-        reputation: 50,
-        valid: true,
-        latitude: 40.7500,
-        longitude: -73.9800,
-        createdAt: DateTime(
-          2025,
-          1,
-          10,
-        ), // This is in the past from current date (May 2025)
-        updatedAt: DateTime.now().subtract(const Duration(hours: 5)),
-      ),
-      User(
-        id: 4,
-        name: 'Diana Lee',
-        email: 'diana.lee@example.com',
-        image: placeHolder,
-        reputation: 200,
-        valid: true,
-        latitude: 40.7200,
-        longitude: -74.0100,
-        createdAt: DateTime(2024, 8, 5),
-        updatedAt: DateTime.now().subtract(const Duration(hours: 10)),
-      ),
-    ];
-
-    // Mock tags
     final tags = [
-      Tag(id: 1, name: 'Congestion'), // index 0
-      Tag(id: 2, name: 'Bus Delay'), // index 1
-      Tag(id: 3, name: 'New Bus Info'), // index 2
-      Tag(id: 4, name: 'Route Update'), // index 3
-      Tag(id: 5, name: 'Accident'), // index 4
-      Tag(id: 6, name: 'Service Alert'), // index 5
+      Tag(id: 1, name: 'Congestion'),
+      Tag(id: 2, name: 'Bus Delay'),
+      Tag(id: 3, name: 'New Bus Info'),
+      Tag(id: 4, name: 'Route Update'),
+      Tag(id: 5, name: 'Accident'),
+      Tag(id: 6, name: 'Service Alert'),
     ];
 
-    // Base time for posts to make comment timestamps relative and logical
     final post1Time = DateTime.now().subtract(const Duration(hours: 3));
     final post2Time = DateTime.now().subtract(const Duration(days: 2));
     final post3Time = DateTime.now().subtract(const Duration(minutes: 45));
     final post5Time = DateTime.now().subtract(const Duration(minutes: 20));
 
-    // Mock comments with timestamps
     final comments = [
       Comment(
         id: 1,
         content: 'Thanks for the heads-up! Taking the subway instead.',
-        authorId: 2,
+        authorName: 'John Doe',
         postId: 1,
         numUpvote: 5,
-        author: users[1],
-        timestamp: post1Time.add(const Duration(minutes: 5)), // After post
+        createdAt: post1Time.add(const Duration(minutes: 5)),
+        upvoted: true,
       ),
       Comment(
         id: 2,
         content: 'Is this still ongoing? Need to plan my commute.',
-        authorId: 3,
+        authorName: 'Emily White',
         postId: 1,
         numUpvote: 2,
-        author: users[2],
-        timestamp: post1Time.add(
-          const Duration(minutes: 15),
-        ), // After post & first comment
+        createdAt: post1Time.add(const Duration(minutes: 15)),
+        upvoted: false,
       ),
       Comment(
         id: 3,
         content: 'Awesome! The new route looks much faster.',
-        authorId: 1,
+        authorName: 'Alice Smith',
         postId: 2,
         numUpvote: 4,
-        author: users[0],
-        timestamp: post2Time.add(const Duration(hours: 1)), // After post
+        createdAt: post2Time.add(const Duration(hours: 1)),
+        upvoted: true,
       ),
       Comment(
         id: 4,
         content: 'Any updates on the delay duration?',
-        authorId: 4,
+        authorName: 'Daniel Kim',
         postId: 3,
         numUpvote: 1,
-        author: users[3],
-        timestamp: post3Time.add(const Duration(minutes: 10)), // After post
+        createdAt: post3Time.add(const Duration(minutes: 10)),
+        upvoted: false,
       ),
       Comment(
         id: 5,
         content: 'This explains the delay I saw this morning!',
-        authorId: 2,
+        authorName: 'John Doe',
         postId: 5,
         numUpvote: 3,
-        author: users[1],
-        timestamp: post5Time.add(const Duration(minutes: 5)), // After post
+        createdAt: post5Time.add(const Duration(minutes: 5)),
+        upvoted: true,
       ),
     ];
 
-    // Mock posts with varied and realistic data
     return [
       Post(
         id: 1,
-        authorId: 1,
+        authorName: 'Alice Smith',
         content:
             'Major congestion on Main Street due to road construction near City Hall. Buses rerouted via Elm St. Plan for extra 20-30 min travel time.',
         numUpvote: 18,
-        timestamp: post1Time,
-        author: users[0],
-        // Corrected tags based on descriptive comments: Congestion, Bus Delay, Accident
+        createdAt: post1Time,
         tags: [tags[0], tags[1], tags[4]],
         comments: [comments[0], comments[1]],
+        upvoted: false,
       ),
       Post(
         id: 2,
-        authorId: 2,
+        authorName: 'Bob Johnson',
         content:
             'New express bus route #47 launching Monday! Connects Downtown to Northside in under 25 minutes. Check transit app for schedule.',
         numUpvote: 30,
-        timestamp: post2Time,
-        author: users[1],
-        tags: [
-          tags[2],
-          tags[3],
-        ], // New Bus Info, Route Update (Matches comment)
+        createdAt: post2Time,
+        tags: [tags[2], tags[3]],
         comments: [comments[2]],
+        upvoted: true,
       ),
       Post(
         id: 3,
-        authorId: 3,
+        authorName: 'Charlie Brown',
         content:
             'Bus #12 delayed by 45 minutes due to emergency roadwork on Oak Avenue. Alternate routes advised.',
         numUpvote: 10,
-        timestamp: post3Time,
-        author: users[2],
-        // Corrected tags based on descriptive comments: Bus Delay, Accident
+        createdAt: post3Time,
         tags: [tags[1], tags[4]],
         comments: [comments[3]],
+        upvoted: false,
       ),
       Post(
         id: 4,
-        authorId: 4,
+        authorName: 'Diana Lee',
         content:
             'Route #9 now has extended evening service until 11 PM starting next week. Great for late commuters!',
         numUpvote: 22,
-        timestamp: DateTime.now().subtract(const Duration(hours: 6)),
-        author: users[3],
-        tags: [
-          tags[3],
-          tags[2],
-        ], // Route Update, New Bus Info (Matches comment)
+        createdAt: DateTime.now().subtract(const Duration(hours: 6)),
+        tags: [tags[3], tags[2]],
         comments: [],
+        upvoted: true,
       ),
       Post(
         id: 5,
-        authorId: 1,
+        authorName: 'Alice Smith',
         content:
             'Accident at 5th and Pine causing delays for routes #3, #15, and #22. Police on scene, expect 30 min delays.',
         numUpvote: 12,
-        timestamp: post5Time,
-        author: users[0],
-        // Corrected tags based on descriptive comments: Congestion, Bus Delay, Accident
+        createdAt: post5Time,
         tags: [tags[0], tags[1], tags[4]],
         comments: [comments[4]],
+        upvoted: false,
       ),
       Post(
         id: 6,
-        authorId: 2,
+        authorName: 'Bob Johnson',
         content:
             'Service alert: All buses on Route #30 will skip Jefferson Stop due to street festival this weekend. Temporary stop added at Maple St.',
         numUpvote: 15,
-        timestamp: DateTime.now().subtract(const Duration(hours: 1)),
-        author: users[1],
-        tags: [
-          tags[3],
-          tags[5],
-        ], // Route Update, Service Alert (Matches comment)
+        createdAt: DateTime.now().subtract(const Duration(hours: 1)),
+        tags: [tags[3], tags[5]],
         comments: [],
+        upvoted: true,
       ),
       Post(
         id: 7,
-        authorId: 3,
+        authorName: 'Charlie Brown',
         content:
             'Lost my wallet on Bus #18 this morning. If found, please contact transit authority. Reward offered!',
         numUpvote: 8,
-        timestamp: DateTime.now().subtract(const Duration(hours: 10)),
-        author: users[2],
-        tags: [
-          tags[5],
-        ], // Service Alert (Matches comment, though could be 'Lost & Found' if that tag existed)
+        createdAt: DateTime.now().subtract(const Duration(hours: 10)),
+        tags: [tags[5]],
         comments: [],
+        upvoted: false,
       ),
       Post(
         id: 8,
-        authorId: 4,
+        authorName: 'Diana Lee',
         content:
             'New real-time bus tracking feature added to the transit app. Now you can see exact bus locations!',
         numUpvote: 35,
-        timestamp: DateTime.now().subtract(const Duration(days: 3)),
-        author: users[3],
-        tags: [
-          tags[2],
-          tags[3],
-        ], // New Bus Info, Route Update (Matches comment)
+        createdAt: DateTime.now().subtract(const Duration(days: 3)),
+        tags: [tags[2], tags[3]],
         comments: [],
+        upvoted: true,
       ),
     ];
   }

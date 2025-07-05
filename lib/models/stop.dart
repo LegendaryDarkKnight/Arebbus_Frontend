@@ -1,20 +1,16 @@
-import 'package:arebbus/models/user.dart';
-
 class Stop {
-  final int? id;
+  final int id;
   final String name;
   final double latitude;
   final double longitude;
-  final int authorId;
-  final User? author;
+  final String authorName;
 
   Stop({
-    this.id,
+    required this.id,
     required this.name,
     required this.latitude,
     required this.longitude,
-    required this.authorId,
-    this.author,
+    required this.authorName,
   });
 
   factory Stop.fromJson(Map<String, dynamic> json) {
@@ -23,8 +19,7 @@ class Stop {
       name: json['name'] ?? '',
       latitude: (json['latitude'] ?? 0.0).toDouble(),
       longitude: (json['longitude'] ?? 0.0).toDouble(),
-      authorId: json['author_id'] ?? json['authorId'],
-      author: json['author'] != null ? User.fromJson(json['author']) : null,
+      authorName: json['authorName'],
     );
   }
 
@@ -34,8 +29,7 @@ class Stop {
       'name': name,
       'latitude': latitude,
       'longitude': longitude,
-      'author_id': authorId,
-      'author': author?.toJson(),
+      'authorName': authorName,
     };
   }
 
@@ -44,16 +38,14 @@ class Stop {
     String? name,
     double? latitude,
     double? longitude,
-    int? authorId,
-    User? author,
+    String? authorName,
   }) {
     return Stop(
       id: id ?? this.id,
       name: name ?? this.name,
       latitude: latitude ?? this.latitude,
       longitude: longitude ?? this.longitude,
-      authorId: authorId ?? this.authorId,
-      author: author ?? this.author,
+      authorName: authorName ?? this.authorName,
     );
   }
 

@@ -1,1005 +1,565 @@
-import 'package:arebbus/models/addon_category.dart';
+import 'package:arebbus/models/route_model.dart';
+import 'package:arebbus/models/stop.dart';
+import 'package:arebbus/service/api_service.dart';
 import 'package:flutter/material.dart';
-import 'package:arebbus/models/addon.dart';
-import 'package:arebbus/service/new_mock_data_service.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
+import 'package:geolocator/geolocator.dart';
 
 class AddonScreen extends StatefulWidget {
   const AddonScreen({super.key});
 
   @override
-  State<StatefulWidget> createState() => _AddonScreenState();
+  State<AddonScreen> createState() => _AddonScreenState();
 }
 
-class _AddonScreenState extends State<AddonScreen>
-    with SingleTickerProviderStateMixin {
-  late TabController _tabController;
-  final TextEditingController _searchController = TextEditingController();
-  String _searchQuery = '';
-  late List<Addon> _allAddons;
-  String _selectedCategory = 'All';
+class _AddonScreenState extends State<AddonScreen> {
+  final MapController _mapController = MapController();
+  LatLng? _currentLocation;
+  bool _isLoading = true;
+  bool _locationPermissionGranted = false;
 
-  final List<String> _categories = ['All', 'Bus', 'Route', 'Stop'];
+  // State for route and stop management
+  RouteModel? _selectedRoute;
+  late final List<RouteModel> _mockRoutes;
+  final List<LatLng> _selectedPoints = [];
+  final List<Marker> _routeMarkers = [];
+  Polyline? _routePolyline;
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 4, vsync: this);
-    _searchController.addListener(() {
-      setState(() {
-        _searchQuery = _searchController.text;
-      });
-    });
-    _allAddons = NewMockDataService.getMockAddons();
+    _generateMockRoutes();
+    _initializeMap();
   }
 
-  @override
-  void dispose() {
-    _tabController.dispose();
-    _searchController.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: Column(
-        children: [
-          // Search Bar
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: TextField(
-              controller: _searchController,
-              decoration: InputDecoration(
-                hintText: 'Search add-ons...',
-                prefixIcon: const Icon(Icons.search),
-                suffixIcon:
-                    _searchQuery.isNotEmpty
-                        ? IconButton(
-                          icon: const Icon(Icons.clear),
-                          onPressed: () {
-                            _searchController.clear();
-                          },
-                        )
-                        : null,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12.0),
-                  borderSide: BorderSide.none,
-                ),
-                filled: true,
-                fillColor: Colors.grey.shade200,
-              ),
-            ),
+  // Generate mock data for routes
+  void _generateMockRoutes() {
+    _mockRoutes = [
+      RouteModel(
+        id: 'R1',
+        name: 'University Shuttle',
+        stops: [
+          Stop(
+            id: 1,
+            name: 'Main Gate',
+            latitude: 22.4639,
+            longitude: 91.9701,
+            authorName: 'Admin',
           ),
-
-          // Category Filter Chips
-          SizedBox(
-            height: 50,
-            child: ListView.builder(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 16.0),
-              itemCount: _categories.length,
-              itemBuilder: (context, index) {
-                final category = _categories[index];
-                final isSelected = _selectedCategory == category;
-                return Padding(
-                  padding: const EdgeInsets.only(right: 8.0),
-                  child: FilterChip(
-                    label: Text(category),
-                    selected: isSelected,
-                    onSelected: (selected) {
-                      setState(() {
-                        _selectedCategory = category;
-                      });
-                    },
-                    selectedColor: Theme.of(context).primaryColor,
-                    labelStyle: TextStyle(
-                      color:
-                          isSelected
-                              ? Theme.of(context).primaryColor
-                              : Colors.grey.shade700,
-                      fontWeight:
-                          isSelected ? FontWeight.bold : FontWeight.normal,
-                    ),
-                  ),
-                );
-              },
-            ),
+          Stop(
+            id: 2,
+            name: 'Arts Faculty',
+            latitude: 22.4658,
+            longitude: 91.9715,
+            authorName: 'Admin',
           ),
-
-          const SizedBox(height: 8),
-
-          // Tab Bar
-          TabBar(
-            controller: _tabController,
-            labelColor: Theme.of(context).primaryColor,
-            unselectedLabelColor: Colors.grey,
-            indicatorSize: TabBarIndicatorSize.label,
-            tabs: const [
-              Tab(text: 'All'),
-              Tab(text: 'Installed'),
-              Tab(text: 'My Add-ons'),
-              Tab(text: 'Dependencies'),
-            ],
-          ),
-
-          // Tab Bar Views
-          Expanded(
-            child: TabBarView(
-              controller: _tabController,
-              children: [
-                _buildAddonList(filterType: 'All'),
-                _buildAddonList(filterType: 'Installed'),
-                _buildAddonList(filterType: 'My Add-ons'),
-                _buildDependencyView(),
-              ],
-            ),
+          Stop(
+            id: 3,
+            name: 'Central Library',
+            latitude: 22.4682,
+            longitude: 91.9732,
+            authorName: 'Admin',
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _showCreateAddonDialog(context),
-        label: const Text('Create Add-on'),
-        icon: const Icon(Icons.add),
-        backgroundColor: Theme.of(context).primaryColor,
-        foregroundColor: Colors.white,
-      ),
-    );
-  }
-
-  Widget _buildAddonList({required String filterType}) {
-    List<Addon> filteredAddons = _getFilteredAddons(filterType);
-
-    if (filteredAddons.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.extension_off, size: 64, color: Colors.grey.shade400),
-            const SizedBox(height: 16),
-            Text(
-              'No add-ons found',
-              style: TextStyle(fontSize: 18, color: Colors.grey.shade700),
-            ),
-            if (filterType == 'All' && _selectedCategory != 'All')
-              Padding(
-                padding: const EdgeInsets.only(top: 8.0),
-                child: TextButton(
-                  onPressed: () {
-                    setState(() {
-                      _selectedCategory = 'All';
-                    });
-                  },
-                  child: const Text('Clear filters'),
-                ),
-              ),
-          ],
-        ),
-      );
-    }
-
-    return ListView.builder(
-      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-      itemCount: filteredAddons.length,
-      itemBuilder: (context, index) {
-        final addon = filteredAddons[index];
-        return _buildAddonCard(addon, index, filteredAddons);
-      },
-    );
-  }
-
-  // Widget _buildAddonCard(Addon addon, int index, List<Addon> filteredAddons) {
-  //   final dependencies = _checkDependencies(addon);
-  //   final canInstall = dependencies.isEmpty;
-
-  //   return Card(
-  //     margin: const EdgeInsets.only(bottom: 12.0),
-  //     elevation: 2,
-  //     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
-  //     child: Padding(
-  //       padding: const EdgeInsets.all(16.0),
-  //       child: Column(
-  //         crossAxisAlignment: CrossAxisAlignment.start,
-  //         children: [
-  //           Row(
-  //             children: [
-  //               CircleAvatar(
-  //                 backgroundColor: _getCategoryColor(addon.category),
-  //                 child: Icon(
-  //                   _getCategoryIcon(addon.category),
-  //                   color: Colors.white,
-  //                   size: 20,
-  //                 ),
-  //               ),
-  //               const SizedBox(width: 12),
-  //               Expanded(
-  //                 child: Column(
-  //                   crossAxisAlignment: CrossAxisAlignment.start,
-  //                   children: [
-  //                     Text(
-  //                       addon.name,
-  //                       style: const TextStyle(
-  //                         fontWeight: FontWeight.bold,
-  //                         fontSize: 16,
-  //                       ),
-  //                     ),
-  //                     const SizedBox(height: 4),
-  //                     Text(
-  //                       'by ${addon.author.name} • ${addon.category}',
-  //                       style: TextStyle(
-  //                         color: Colors.grey.shade600,
-  //                         fontSize: 12,
-  //                       ),
-  //                     ),
-  //                   ],
-  //                 ),
-  //               ),
-  //               _buildInstallButton(addon, canInstall, dependencies),
-  //             ],
-  //           ),
-  //           const SizedBox(height: 12),
-  //           Text(
-  //             addon.description,
-  //             style: TextStyle(color: Colors.grey.shade700),
-  //           ),
-
-  //           // Show dependencies if any
-  //           if (dependencies.isNotEmpty) ...[
-  //             const SizedBox(height: 12),
-  //             Container(
-  //               padding: const EdgeInsets.all(12),
-  //               decoration: BoxDecoration(
-  //                 color: Colors.orange.shade50,
-  //                 borderRadius: BorderRadius.circular(8),
-  //                 border: Border.all(color: Colors.orange.shade200),
-  //               ),
-  //               child: Column(
-  //                 crossAxisAlignment: CrossAxisAlignment.start,
-  //                 children: [
-  //                   Row(
-  //                     children: [
-  //                       Icon(
-  //                         Icons.warning_amber,
-  //                         color: Colors.orange.shade700,
-  //                         size: 20,
-  //                       ),
-  //                       const SizedBox(width: 8),
-  //                       Text(
-  //                         'Missing Dependencies',
-  //                         style: TextStyle(
-  //                           fontWeight: FontWeight.bold,
-  //                           color: Colors.orange.shade700,
-  //                         ),
-  //                       ),
-  //                     ],
-  //                   ),
-  //                   const SizedBox(height: 8),
-  //                   ...dependencies.map(
-  //                     (dep) => Padding(
-  //                       padding: const EdgeInsets.only(bottom: 4),
-  //                       child: Row(
-  //                         children: [
-  //                           Icon(
-  //                             Icons.fiber_manual_record,
-  //                             size: 8,
-  //                             color: Colors.orange.shade700,
-  //                           ),
-  //                           const SizedBox(width: 8),
-  //                           Expanded(child: Text(dep)),
-  //                           TextButton(
-  //                             onPressed: () => _navigateToCreateDependency(dep),
-  //                             style: TextButton.styleFrom(
-  //                               padding: const EdgeInsets.symmetric(
-  //                                 horizontal: 8,
-  //                               ),
-  //                               minimumSize: const Size(60, 30),
-  //                             ),
-  //                             child: const Text(
-  //                               'Create',
-  //                               style: TextStyle(fontSize: 12),
-  //                             ),
-  //                           ),
-  //                         ],
-  //                       ),
-  //                     ),
-  //                   ),
-  //                 ],
-  //               ),
-  //             ),
-  //           ],
-
-  //           const SizedBox(height: 12),
-  //           Row(
-  //             mainAxisAlignment: MainAxisAlignment.spaceBetween,
-  //             children: [
-  //               Row(
-  //                 children: [
-  //                   const Icon(Icons.star, size: 16, color: Colors.amber),
-  //                   const SizedBox(width: 4),
-  //                   Text('${addon.rating}'),
-  //                 ],
-  //               ),
-  //               Row(
-  //                 children: [
-  //                   const Icon(Icons.download, size: 16, color: Colors.blue),
-  //                   const SizedBox(width: 4),
-  //                   Text('${addon.installs}'),
-  //                 ],
-  //               ),
-  //               Text(
-  //                 _getTimeAgo(addon.updatedAt),
-  //                 style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
-  //               ),
-  //             ],
-  //           ),
-  //         ],
-  //       ),
-  //     ),
-  //   );
-  // }
-
-  Widget _buildAddonCard(Addon addon, int index, List<Addon> filteredAddons) {
-    final dependencies = _checkDependencies(addon);
-    final canInstall = dependencies.isEmpty;
-
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12.0),
-      elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                CircleAvatar(
-                  backgroundColor: _getCategoryColor(addon.category),
-                  child: Icon(
-                    _getCategoryIcon(addon.category),
-                    color: Colors.white,
-                    size: 20,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        addon.name,
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'by ${addon.author.name} • ${addon.category}',
-                        style: TextStyle(
-                          color: Colors.grey.shade600,
-                          fontSize: 12,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                _buildInstallButton(addon, canInstall, dependencies),
-              ],
-            ),
-            const SizedBox(height: 12),
-            // Limit description height
-            ConstrainedBox(
-              constraints: const BoxConstraints(maxHeight: 60),
-              child: SingleChildScrollView(
-                child: Text(
-                  addon.description,
-                  style: TextStyle(color: Colors.grey.shade700),
-                ),
-              ),
-            ),
-            // Show dependencies if any
-            if (dependencies.isNotEmpty) ...[
-              const SizedBox(height: 12),
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.orange.shade50,
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.orange.shade200),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Icon(
-                          Icons.warning_amber,
-                          color: Colors.orange.shade700,
-                          size: 20,
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          'Missing Dependencies',
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            color: Colors.orange.shade700,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    // Limit dependencies list height
-                    ConstrainedBox(
-                      constraints: const BoxConstraints(maxHeight: 100),
-                      child: ListView(
-                        shrinkWrap: true,
-                        children:
-                            dependencies
-                                .map(
-                                  (dep) => Padding(
-                                    padding: const EdgeInsets.only(bottom: 4),
-                                    child: Row(
-                                      children: [
-                                        Icon(
-                                          Icons.fiber_manual_record,
-                                          size: 8,
-                                          color: Colors.orange.shade700,
-                                        ),
-                                        const SizedBox(width: 8),
-                                        Expanded(child: Text(dep)),
-                                        TextButton(
-                                          onPressed:
-                                              () => _navigateToCreateDependency(
-                                                dep,
-                                              ),
-                                          style: TextButton.styleFrom(
-                                            padding: const EdgeInsets.symmetric(
-                                              horizontal: 8,
-                                            ),
-                                            minimumSize: const Size(60, 30),
-                                          ),
-                                          child: const Text(
-                                            'Create',
-                                            style: TextStyle(fontSize: 12),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                )
-                                .toList(),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-            const SizedBox(height: 12),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Row(
-                  children: [
-                    const Icon(Icons.star, size: 16, color: Colors.amber),
-                    const SizedBox(width: 4),
-                    Text('${addon.rating}'),
-                  ],
-                ),
-                Row(
-                  children: [
-                    const Icon(Icons.download, size: 16, color: Colors.blue),
-                    const SizedBox(width: 4),
-                    Text('${addon.installs}'),
-                  ],
-                ),
-                Text(
-                  _getTimeAgo(addon.updatedAt),
-                  style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildInstallButton(
-    Addon addon,
-    bool canInstall,
-    List<String> dependencies,
-  ) {
-    if (addon.isInstalled) {
-      return Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const Icon(Icons.check_circle, color: Colors.green),
-          const SizedBox(width: 4),
-          const Text('Installed', style: TextStyle(color: Colors.green)),
-        ],
-      );
-    }
-
-    if (!canInstall) {
-      return OutlinedButton(
-        onPressed: null,
-        style: OutlinedButton.styleFrom(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20.0),
+      RouteModel(
+        id: 'R2',
+        name: 'City Circular',
+        stops: [
+          Stop(
+            id: 4,
+            name: 'New Market',
+            latitude: 22.3569,
+            longitude: 91.8339,
+            authorName: 'Admin',
           ),
-        ),
-        child: Text('Need ${dependencies.length} deps'),
-      );
-    }
-
-    return ElevatedButton(
-      onPressed: () => _installAddon(addon),
-      style: ElevatedButton.styleFrom(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20.0),
-        ),
-        backgroundColor: Theme.of(context).primaryColor,
-        foregroundColor: Colors.white,
-      ),
-      child: const Text('Install'),
-    );
-  }
-
-  // Widget _buildDependencyView() {
-  //   return Padding(
-  //     padding: const EdgeInsets.all(16.0),
-  //     child: Column(
-  //       crossAxisAlignment: CrossAxisAlignment.start,
-  //       children: [
-  //         const Text(
-  //           'Dependency Chain',
-  //           style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-  //         ),
-  //         const SizedBox(height: 16),
-  //         Card(
-  //           child: Padding(
-  //             padding: const EdgeInsets.all(16.0),
-  //             child: Column(
-  //               children: [
-  //                 _buildDependencyStep(
-  //                   'Stop',
-  //                   'Create bus stops for locations',
-  //                   Icons.location_on,
-  //                   Colors.red,
-  //                   isFirst: true,
-  //                 ),
-  //                 _buildDependencyArrow(),
-  //                 _buildDependencyStep(
-  //                   'Route',
-  //                   'Connect stops to create routes',
-  //                   Icons.route,
-  //                   Colors.orange,
-  //                 ),
-  //                 _buildDependencyArrow(),
-  //                 _buildDependencyStep(
-  //                   'Bus Service',
-  //                   'Add buses that follow routes',
-  //                   Icons.directions_bus,
-  //                   Colors.blue,
-  //                   isLast: true,
-  //                 ),
-  //               ],
-  //             ),
-  //           ),
-  //         ),
-  //         const SizedBox(height: 24),
-  //         const Text(
-  //           'Quick Actions',
-  //           style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-  //         ),
-  //         const SizedBox(height: 12),
-  //         _buildQuickActionCard(
-  //           'Create Stop',
-  //           'Add a new bus stop location',
-  //           Icons.add_location,
-  //           Colors.red,
-  //           () => _navigateToCreateDependency('Stop'),
-  //         ),
-  //         _buildQuickActionCard(
-  //           'Create Route',
-  //           'Connect existing stops',
-  //           Icons.add_road,
-  //           Colors.orange,
-  //           () => _navigateToCreateDependency('Route'),
-  //         ),
-  //         _buildQuickActionCard(
-  //           'Create Bus Service',
-  //           'Add bus for existing route',
-  //           Icons.add,
-  //           Colors.blue,
-  //           () => _navigateToCreateDependency('Bus Service'),
-  //         ),
-  //       ],
-  //     ),
-  //   );
-  // }
-
-  Widget _buildDependencyView() {
-    return SingleChildScrollView(
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Dependency Chain',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 16),
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  children: [
-                    _buildDependencyStep(
-                      'Stop',
-                      'Create bus stops for locations',
-                      Icons.location_on,
-                      Colors.red,
-                      isFirst: true,
-                    ),
-                    _buildDependencyArrow(),
-                    _buildDependencyStep(
-                      'Route',
-                      'Connect stops to create routes',
-                      Icons.route,
-                      Colors.orange,
-                    ),
-                    _buildDependencyArrow(),
-                    _buildDependencyStep(
-                      'Bus Service',
-                      'Add buses that follow routes',
-                      Icons.directions_bus,
-                      Colors.blue,
-                      isLast: true,
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(height: 24),
-            const Text(
-              'Quick Actions',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 12),
-            _buildQuickActionCard(
-              'Create Stop',
-              'Add a new bus stop location',
-              Icons.add_location,
-              Colors.red,
-              () => _navigateToCreateDependency('Stop'),
-            ),
-            _buildQuickActionCard(
-              'Create Route',
-              'Connect existing stops',
-              Icons.add_road,
-              Colors.orange,
-              () => _navigateToCreateDependency('Route'),
-            ),
-            _buildQuickActionCard(
-              'Create Bus Service',
-              'Add bus for existing route',
-              Icons.add,
-              Colors.blue,
-              () => _navigateToCreateDependency('Bus Service'),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildDependencyStep(
-    String title,
-    String description,
-    IconData icon,
-    Color color, {
-    bool isFirst = false,
-    bool isLast = false,
-  }) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: color,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: color),
-      ),
-      child: Row(
-        children: [
-          CircleAvatar(
-            backgroundColor: color,
-            child: Icon(icon, color: Colors.white, size: 20),
+          Stop(
+            id: 5,
+            name: 'GEC Circle',
+            latitude: 22.3592,
+            longitude: 91.8210,
+            authorName: 'Admin',
           ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: const TextStyle(fontWeight: FontWeight.bold),
-                ),
-                Text(
-                  description,
-                  style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
-                ),
-              ],
-            ),
+          Stop(
+            id: 6,
+            name: '2 Number Gate',
+            latitude: 22.3615,
+            longitude: 91.8325,
+            authorName: 'Admin',
           ),
         ],
       ),
-    );
+    ];
   }
 
-  Widget _buildDependencyArrow() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
-      child: Center(
-        child: Icon(
-          Icons.keyboard_arrow_down,
-          color: Colors.grey.shade400,
-          size: 32,
-        ),
-      ),
-    );
+  Future<void> _initializeMap() async {
+    await _getCurrentLocation();
   }
 
-  Widget _buildQuickActionCard(
-    String title,
-    String description,
-    IconData icon,
-    Color color,
-    VoidCallback onTap,
-  ) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 8),
-      child: ListTile(
-        leading: CircleAvatar(
-          backgroundColor: color,
-          child: Icon(icon, color: Colors.white, size: 20),
-        ),
-        title: Text(title),
-        subtitle: Text(description),
-        trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-        onTap: onTap,
-      ),
-    );
-  }
+  Future<void> _getCurrentLocation() async {
+    // ... (Your existing _getCurrentLocation method remains unchanged)
+    try {
+      // Check if location services are enabled
+      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) {
+        _showLocationDialog('Location services are disabled');
+        return;
+      }
 
-  List<String> _checkDependencies(Addon addon) {
-    List<String> missing = [];
-
-    if (addon.category.value == 'Bus Service') {
-      // Check if user has any routes
-      bool hasRoutes = _allAddons.any(
-        (a) =>
-            a.category.value == 'Route' &&
-            a.author.id == NewMockDataService.currentUser.id &&
-            a.isInstalled,
-      );
-
-      if (!hasRoutes) {
-        missing.add('Route addon required');
-
-        // Also check for stops since routes need stops
-        bool hasStops = _allAddons.any(
-          (a) =>
-              a.category.value == 'Stop' &&
-              a.author.id == NewMockDataService.currentUser.id &&
-              a.isInstalled,
-        );
-
-        if (!hasStops) {
-          missing.add('Stop addon required');
+      // Check location permissions
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+        if (permission == LocationPermission.denied) {
+          _showLocationDialog('Location permissions are denied');
+          return;
         }
       }
-    } else if (addon.category.value == 'Route') {
-      // Check if user has any stops
-      bool hasStops = _allAddons.any(
-        (a) =>
-            a.category.value == 'Stop' &&
-            a.author.id == NewMockDataService.currentUser.id &&
-            a.isInstalled,
+
+      if (permission == LocationPermission.deniedForever) {
+        _showLocationDialog('Location permissions are permanently denied');
+        return;
+      }
+
+      // Get current position
+      Position position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high,
       );
 
-      if (!hasStops) {
-        missing.add('Stop addon required');
+      if (mounted) {
+        setState(() {
+          _currentLocation = LatLng(position.latitude, position.longitude);
+          _locationPermissionGranted = true;
+          _isLoading = false;
+        });
+        _mapController.move(_currentLocation!, 15.0);
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+        _showLocationDialog('Error getting location: ${e.toString()}');
       }
     }
-
-    return missing;
   }
 
-  List<Addon> _getFilteredAddons(String filterType) {
-    List<Addon> filteredAddons = [];
-
-    switch (filterType) {
-      case 'All':
-        filteredAddons = _allAddons;
-        break;
-      case 'Installed':
-        filteredAddons =
-            _allAddons.where((addon) => addon.isInstalled).toList();
-        break;
-      case 'My Add-ons':
-        filteredAddons =
-            _allAddons
-                .where(
-                  (addon) =>
-                      addon.author.id == NewMockDataService.currentUser.id,
-                )
-                .toList();
-        break;
-    }
-
-    // Apply category filter
-    if (_selectedCategory != 'All') {
-      filteredAddons =
-          filteredAddons
-              .where((addon) => addon.category.value == _selectedCategory)
-              .toList();
-    }
-
-    // Apply search filter
-    if (_searchQuery.isNotEmpty) {
-      filteredAddons =
-          filteredAddons
-              .where(
-                (addon) =>
-                    addon.name.toLowerCase().contains(
-                      _searchQuery.toLowerCase(),
-                    ) ||
-                    addon.description.toLowerCase().contains(
-                      _searchQuery.toLowerCase(),
-                    ) ||
-                    addon.category.value.toLowerCase().contains(
-                      _searchQuery.toLowerCase(),
-                    ),
-              )
-              .toList();
-    }
-
-    return filteredAddons;
-  }
-
-  Color _getCategoryColor(AddonCategory category) {
-    switch (category) {
-      case AddonCategory.bus:
-        return Colors.blue;
-      case AddonCategory.route:
-        return Colors.orange;
-      case AddonCategory.stop:
-        return Colors.red;
-    }
-  }
-
-  IconData _getCategoryIcon(AddonCategory category) {
-    switch (category) {
-      case AddonCategory.bus:
-        return Icons.directions_bus;
-      case AddonCategory.route:
-        return Icons.route;
-      case AddonCategory.stop:
-        return Icons.location_on;
-    }
-  }
-
-  String _getTimeAgo(DateTime dateTime) {
-    final difference = DateTime.now().difference(dateTime);
-
-    if (difference.inDays > 30) {
-      return '${(difference.inDays / 30).floor()}mo ago';
-    } else if (difference.inDays > 0) {
-      return '${difference.inDays}d ago';
-    } else if (difference.inHours > 0) {
-      return '${difference.inHours}h ago';
-    } else if (difference.inMinutes > 0) {
-      return '${difference.inMinutes}m ago';
-    } else {
-      return 'now';
-    }
-  }
-
-  void _installAddon(Addon addon) {
-    setState(() {
-      // Update the addon to installed
-      final index = _allAddons.indexWhere((a) => a.id == addon.id);
-      if (index != -1) {
-        _allAddons[index] = Addon(
-          id: addon.id,
-          name: addon.name,
-          description: addon.description,
-          category: addon.category,
-          author: addon.author,
-          installs: addon.installs + 1,
-          rating: addon.rating,
-          isInstalled: true,
-          createdAt: addon.createdAt,
-          updatedAt: addon.updatedAt,
-        );
-      }
-    });
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('${addon.name} installed successfully!'),
-        backgroundColor: Colors.green,
-        action: SnackBarAction(
-          label: 'View',
-          textColor: Colors.white,
-          onPressed: () {
-            // Navigate to addon details or configuration
-          },
-        ),
-      ),
-    );
-  }
-
-  void _navigateToCreateDependency(String type) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Navigate to create $type addon'),
-        action: SnackBarAction(
-          label: 'Create',
-          onPressed: () {
-            // Navigate to appropriate creation screen
-          },
-        ),
-      ),
-    );
-  }
-
-  void _showCreateAddonDialog(BuildContext context) {
+  void _showLocationDialog(String message) {
+    // ... (Your existing _showLocationDialog method remains unchanged)
     showDialog(
       context: context,
       builder:
           (context) => AlertDialog(
-            title: const Text('Create New Add-on'),
+            title: const Text('Location Access'),
+            content: Text(message),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('OK'),
+              ),
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                  _getCurrentLocation();
+                },
+                child: const Text('Retry'),
+              ),
+            ],
+          ),
+    );
+  }
+
+  // lib/screens/addon_screen.dart
+
+  void _onRouteSelected(RouteModel? route) {
+    setState(() {
+      _selectedRoute = route;
+      _routeMarkers.clear();
+      _routePolyline = null;
+
+      if (route != null) {
+        // Create markers for each stop in the route
+        _routeMarkers.addAll(
+          route.stops.map(
+            (stop) => Marker(
+              point: LatLng(stop.latitude, stop.longitude),
+              width: 80,
+              height: 40,
+              child: Column(
+                children: [
+                  const Icon(Icons.location_on, color: Colors.red, size: 20),
+                  Text(
+                    stop.name,
+                    style: const TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+
+        // Create a polyline to connect the stops
+        final points =
+            route.stops.map((s) => LatLng(s.latitude, s.longitude)).toList();
+        _routePolyline = Polyline(
+          points: points,
+          color: Colors.deepPurpleAccent,
+          strokeWidth: 4.0,
+        );
+
+        // Fit map to route bounds
+        if (points.isNotEmpty) {
+          // CORRECTED SECTION: Use LatLngBounds and CameraFit.bounds
+          final bounds = LatLngBounds.fromPoints(points);
+          _mapController.fitCamera(
+            CameraFit.bounds(
+              bounds: bounds,
+              padding: const EdgeInsets.all(
+                50.0,
+              ), // Add padding around the bounds
+            ),
+          );
+        }
+      }
+    });
+  }
+
+  Future<void> _createStopsFromSelection() async {
+    if (_selectedPoints.isEmpty) return;
+
+    final pointsToProcess = List<LatLng>.from(_selectedPoints);
+    int createdCount = 0;
+
+    for (int i = 0; i < pointsToProcess.length; i++) {
+      final point = pointsToProcess[i];
+      final stopName = await _showAddStopNameDialog(point, i + 1);
+
+      if (stopName != null && stopName.trim().isNotEmpty) {
+        await createStop(stopName.trim(), point.latitude, point.longitude);
+        createdCount++;
+      }
+    }
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('$createdCount stop(s) created successfully!'),
+          backgroundColor: Colors.green,
+        ),
+      );
+    }
+
+    setState(() {
+      _selectedPoints.clear();
+    });
+  }
+
+  Future<String?> _showAddStopNameDialog(LatLng position, int stopNumber) {
+    final TextEditingController nameController = TextEditingController();
+    return showDialog<String>(
+      context: context,
+      builder:
+          (context) => AlertDialog(
+            title: Text('Name Stop #$stopNumber'),
             content: Column(
               mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                ListTile(
-                  leading: const Icon(Icons.location_on, color: Colors.red),
-                  title: const Text('Stop'),
-                  subtitle: const Text('Create a bus stop location'),
-                  onTap: () {
-                    Navigator.pop(context);
-                    _navigateToCreateDependency('Stop');
-                  },
+                Text(
+                  'Location: ${position.latitude.toStringAsFixed(4)}, ${position.longitude.toStringAsFixed(4)}',
+                  style: const TextStyle(fontSize: 12, color: Colors.grey),
                 ),
-                ListTile(
-                  leading: const Icon(Icons.route, color: Colors.orange),
-                  title: const Text('Route'),
-                  subtitle: const Text('Connect stops to create a route'),
-                  onTap: () {
-                    Navigator.pop(context);
-                    _navigateToCreateDependency('Route');
-                  },
-                ),
-                ListTile(
-                  leading: const Icon(Icons.directions_bus, color: Colors.blue),
-                  title: const Text('Bus Service'),
-                  subtitle: const Text('Add a bus service for a route'),
-                  onTap: () {
-                    Navigator.pop(context);
-                    _navigateToCreateDependency('Bus Service');
-                  },
+                const SizedBox(height: 16),
+                TextField(
+                  controller: nameController,
+                  decoration: const InputDecoration(
+                    labelText: 'Stop Name',
+                    hintText: 'Enter a name for this stop',
+                    border: OutlineInputBorder(),
+                  ),
+                  autofocus: true,
                 ),
               ],
             ),
             actions: [
               TextButton(
-                onPressed: () => Navigator.pop(context),
+                onPressed: () => Navigator.of(context).pop(),
                 child: const Text('Cancel'),
+              ),
+              TextButton(
+                onPressed: () {
+                  if (nameController.text.trim().isNotEmpty) {
+                    Navigator.of(context).pop(nameController.text);
+                  }
+                },
+                child: const Text('Add'),
               ),
             ],
           ),
+    );
+  }
+
+  // API service integration (Your existing createStop method)
+  Future<void> createStop(
+    String name,
+    double latitude,
+    double longitude,
+  ) async {
+    // ... (Your existing createStop method remains unchanged)
+    try {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const CircularProgressIndicator(strokeWidth: 2),
+                const SizedBox(width: 16),
+                Text('Creating stop "$name"...'),
+              ],
+            ),
+            duration: const Duration(seconds: 4), // Kept open longer
+          ),
+        );
+      }
+
+      await ApiService.instance.createStop(name, latitude, longitude);
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).hideCurrentSnackBar();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Stop "$name" created successfully'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).hideCurrentSnackBar();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to create stop: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  void _centerOnCurrentLocation() {
+    if (_currentLocation != null) {
+      _mapController.move(_currentLocation!, 15.0);
+    } else {
+      _getCurrentLocation();
+    }
+  }
+
+  Widget _buildMapPanel() {
+    if (_isLoading) {
+      return Container(
+        height: 400,
+        decoration: BoxDecoration(
+          border: Border.all(color: Colors.grey[300]!),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: const Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              CircularProgressIndicator(),
+              SizedBox(height: 16),
+              Text('Getting your location...'),
+            ],
+          ),
+        ),
+      );
+    }
+    return Container(
+      height: 400,
+      decoration: BoxDecoration(
+        border: Border.all(color: Colors.grey[300]!),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(8),
+        child: FlutterMap(
+          mapController: _mapController,
+          options: MapOptions(
+            initialCenter: _currentLocation ?? const LatLng(22.46, 91.97),
+            initialZoom: 14.0,
+            onTap: (tapPosition, point) {
+              setState(() {
+                _selectedPoints.add(point);
+              });
+            },
+          ),
+          children: [
+            TileLayer(
+              urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+              userAgentPackageName: 'com.example.app',
+            ),
+            if (_routePolyline != null)
+              PolylineLayer(polylines: [_routePolyline!]),
+            MarkerLayer(
+              markers: [
+                // Current location marker
+                if (_currentLocation != null)
+                  Marker(
+                    point: _currentLocation!,
+                    width: 80,
+                    height: 80,
+                    child: const Icon(
+                      Icons.my_location,
+                      color: Colors.blue,
+                      size: 30,
+                    ),
+                  ),
+                // Markers for the selected route's stops
+                ..._routeMarkers,
+                // Markers for newly tapped points
+                ..._selectedPoints.asMap().entries.map(
+                  (entry) => Marker(
+                    point: entry.value,
+                    width: 80,
+                    height: 50,
+                    child: Column(
+                      children: [
+                        Icon(
+                          Icons.add_location,
+                          color: Colors.orange[700],
+                          size: 25,
+                        ),
+                        Text(
+                          "New ${entry.key + 1}",
+                          style: const TextStyle(
+                            color: Colors.black,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 10,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Add Stops and Routes'),
+        backgroundColor: Colors.white,
+        foregroundColor: Colors.black,
+        elevation: 1,
+      ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              "Select a Route to Display",
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8),
+            DropdownButtonFormField<RouteModel>(
+              value: _selectedRoute,
+              decoration: const InputDecoration(
+                border: OutlineInputBorder(),
+                hintText: 'Choose a route to see its stops',
+              ),
+              items:
+                  _mockRoutes.map((route) {
+                    return DropdownMenuItem(
+                      value: route,
+                      child: Text(route.name),
+                    );
+                  }).toList(),
+              onChanged: _onRouteSelected,
+            ),
+            const SizedBox(height: 24),
+            const Text(
+              "Tap Map to Add New Stops",
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8),
+            Stack(
+              children: [
+                _buildMapPanel(),
+                Positioned(
+                  top: 16,
+                  right: 16,
+                  child: FloatingActionButton(
+                    onPressed: _centerOnCurrentLocation,
+                    backgroundColor: Colors.white,
+                    foregroundColor: Colors.blue,
+                    mini: true,
+                    heroTag: 'centerLocationFab',
+                    child: const Icon(Icons.my_location),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            if (_selectedPoints.isNotEmpty)
+              Row(
+                children: [
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      onPressed: _createStopsFromSelection,
+                      icon: const Icon(Icons.add_task),
+                      label: Text('Create ${_selectedPoints.length} Stop(s)'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.green,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: TextButton.icon(
+                      onPressed: () {
+                        setState(() {
+                          _selectedPoints.clear();
+                        });
+                      },
+                      icon: const Icon(Icons.clear_all),
+                      label: const Text('Clear Selection'),
+                      style: TextButton.styleFrom(foregroundColor: Colors.red),
+                    ),
+                  ),
+                ],
+              ),
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.blue[50],
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.blue[200]!),
+              ),
+              child: const Center(
+                child: Text(
+                  'Tap on the map to mark locations for new stops.',
+                  style: TextStyle(fontSize: 14),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
