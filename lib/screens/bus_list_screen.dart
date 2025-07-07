@@ -3,6 +3,7 @@ import 'package:arebbus/models/bus.dart';
 import 'package:arebbus/models/bus_response.dart';
 import 'package:arebbus/service/api_service.dart';
 import 'package:arebbus/screens/bus_detail_screen.dart';
+import 'package:arebbus/screens/add_bus_screen.dart';
 
 class BusListScreen extends StatefulWidget {
   final bool showInstalledOnly;
@@ -139,6 +140,20 @@ class _BusListScreenState extends State<BusListScreen> {
     );
   }
   
+  void _navigateToAddBus() async {
+    final result = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const AddBusScreen(),
+      ),
+    );
+    
+    // Refresh the list if a bus was created
+    if (result == true) {
+      _loadBuses();
+    }
+  }
+  
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -163,6 +178,11 @@ class _BusListScreenState extends State<BusListScreen> {
         ],
       ),
       body: _buildBody(),
+      floatingActionButton: widget.showInstalledOnly ? null : FloatingActionButton(
+        onPressed: _navigateToAddBus,
+        tooltip: 'Add New Bus',
+        child: const Icon(Icons.add),
+      ),
     );
   }
   

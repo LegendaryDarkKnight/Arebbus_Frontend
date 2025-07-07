@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart' show debugPrint, kDebugMode, kIsWeb;
 import 'package:arebbus/models/comment.dart';
 import 'package:arebbus/models/bus.dart';
 import 'package:arebbus/models/bus_response.dart';
+import 'package:arebbus/models/route_response.dart';
 import 'package:arebbus/models/stop.dart';
 import 'package:arebbus/models/route.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -59,9 +60,9 @@ class ApiService {
   void _initializeDio() {
     _dio = Dio();
     _dio.options.baseUrl = _baseUrl;
-    _dio.options.connectTimeout = const Duration(seconds: 10);
-    _dio.options.receiveTimeout = const Duration(seconds: 10);
-    _dio.options.sendTimeout = const Duration(seconds: 10);
+    _dio.options.connectTimeout = const Duration(seconds: 30);
+    _dio.options.receiveTimeout = const Duration(seconds: 60);
+    _dio.options.sendTimeout = const Duration(seconds: 60);
 
     _dio.options.headers = {
       'Content-Type': 'application/json',
@@ -339,8 +340,8 @@ class ApiService {
             'Accept': 'application/json',
           },
           extra: kIsWeb ? {'withCredentials': true} : null,
-          sendTimeout: const Duration(seconds: 10),
-          receiveTimeout: const Duration(seconds: 10),
+          sendTimeout: const Duration(seconds: 60),
+          receiveTimeout: const Duration(seconds: 60),
         ),
       );
 
@@ -498,8 +499,8 @@ class ApiService {
             'Accept': 'application/json',
           },
           extra: kIsWeb ? {'withCredentials': true} : null,
-          sendTimeout: const Duration(seconds: 10),
-          receiveTimeout: const Duration(seconds: 10),
+          sendTimeout: const Duration(seconds: 60),
+          receiveTimeout: const Duration(seconds: 60),
         ),
       );
 
@@ -570,8 +571,8 @@ class ApiService {
             'Accept': 'application/json',
           },
           extra: kIsWeb ? {'withCredentials': true} : null,
-          sendTimeout: const Duration(seconds: 10),
-          receiveTimeout: const Duration(seconds: 10),
+          sendTimeout: const Duration(seconds: 60),
+          receiveTimeout: const Duration(seconds: 60),
         ),
       );
 
@@ -838,6 +839,123 @@ class ApiService {
         throw Exception('Route not found');
       }
       throw Exception('Failed to load route: ${e.message}');
+    }
+  }
+
+  // Route and Stop creation methods
+  Future<RouteResponse> getAllRoutes({int page = 0, int size = 10}) async {
+    try {
+      final response = await _dio.get(
+        '/route/all',
+        queryParameters: {'page': page, 'size': size},
+      );
+      
+      if (response.statusCode == 200) {
+        return RouteResponse.fromJson(response.data as Map<String, dynamic>);
+      } else {
+        throw DioException(
+          requestOptions: response.requestOptions,
+          response: response,
+          error: 'Failed to load routes: Status code ${response.statusCode}',
+        );
+      }
+    } on DioException catch (e) {
+      debugPrint('Error fetching routes: $e');
+      throw Exception('Failed to load routes: ${e.message}');
+    }
+  }
+
+  Future<Stop> createStop({
+    required String name,
+    required double latitude,
+    required double longitude,
+  }) async {
+    try {
+      final response = await _dio.post(
+        '/stop/create',
+        data: {
+          'name': name,
+          'latitude': latitude,
+          'longitude': longitude,
+        },
+      );
+      
+      if (response.statusCode == 200) {
+        return Stop.fromJson(response.data as Map<String, dynamic>);
+      } else {
+        throw DioException(
+          requestOptions: response.requestOptions,
+          response: response,
+          error: 'Failed to create stop: Status code ${response.statusCode}',
+        );
+      }
+    } on DioException catch (e) {
+      debugPrint('Error creating stop: $e');
+      throw Exception('Failed to create stop: ${e.message}');
+    }
+  }
+
+  Future<Route> createRoute({
+    required String name,
+    required List<int> stopIds,
+  }) async {
+    try {
+      final response = await _dio.post(
+        '/route/create',
+        data: {
+          'name': name,
+          'stopIds': stopIds,
+        },
+      );
+      
+      if (response.statusCode == 200) {
+        return Route.fromJson(response.data as Map<String, dynamic>);
+      } else {
+        throw DioException(
+          requestOptions: response.requestOptions,
+          response: response,
+          error: 'Failed to create route: Status code ${response.statusCode}',
+        );
+      }
+    } on DioException catch (e) {
+      debugPrint('Error creating route: $e');
+      if (e.response?.statusCode == 404) {
+        throw Exception('One or more stops not found');
+      }
+      throw Exception('Failed to create route: ${e.message}');
+    }
+  }
+
+  Future<Bus> createBus({
+    required String name,
+    required int routeId,
+    required int capacity,
+  }) async {
+    try {
+      final response = await _dio.post(
+        '/bus/create',
+        data: {
+          'name': name,
+          'routeId': routeId,
+          'capacity': capacity,
+        },
+      );
+      
+      if (response.statusCode == 200) {
+        return Bus.fromJson(response.data as Map<String, dynamic>);
+      } else {
+        throw DioException(
+          requestOptions: response.requestOptions,
+          response: response,
+          error: 'Failed to create bus: Status code ${response.statusCode}',
+        );
+      }
+    } on DioException catch (e) {
+      debugPrint('Error creating bus: $e');
+      if (e.response?.statusCode == 404) {
+        throw Exception('Route not found');
+      }
+      throw Exception('Failed to create bus: ${e.message}');
     }
   }
 }
