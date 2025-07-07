@@ -23,7 +23,7 @@ class Stop {
       name: json['name'] ?? '',
       latitude: (json['latitude'] ?? 0.0).toDouble(),
       longitude: (json['longitude'] ?? 0.0).toDouble(),
-      authorId: json['author_id'] ?? json['authorId'],
+      authorId: json['authorId'] ?? json['author_id'] ?? 0,
       author: json['author'] != null ? User.fromJson(json['author']) : null,
     );
   }

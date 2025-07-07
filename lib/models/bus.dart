@@ -1,99 +1,95 @@
-import 'package:arebbus/models/user.dart';
 import 'package:arebbus/models/route.dart';
 
 class Bus {
   final int? id;
-  final int authorId;
-  final int routeId;
+  final String name;
+  final String authorName;
   final int capacity;
   final int numInstall;
   final int numUpvote;
   final String? status;
-  final int? basedOn;
-  final User? author;
   final Route? route;
-  final Bus? basedOnBus;
+  final Bus? basedOn;
+  final bool upvoted;
+  final bool installed;
 
   Bus({
     this.id,
-    required this.authorId,
-    required this.routeId,
+    required this.name,
+    required this.authorName,
     required this.capacity,
     required this.numInstall,
     required this.numUpvote,
     this.status,
-    this.basedOn,
-    this.author,
     this.route,
-    this.basedOnBus,
+    this.basedOn,
+    required this.upvoted,
+    required this.installed,
   });
 
   factory Bus.fromJson(Map<String, dynamic> json) {
     return Bus(
       id: json['id'],
-      authorId: json['author_id'] ?? json['authorId'],
-      routeId: json['route_id'] ?? json['routeId'],
+      name: json['name'] ?? '',
+      authorName: json['authorName'] ?? '',
       capacity: json['capacity'] ?? 0,
-      numInstall: json['num_install'] ?? json['numInstall'] ?? 0,
-      numUpvote: json['num_upvote'] ?? json['numUpvote'] ?? 0,
+      numInstall: json['numInstall'] ?? 0,
+      numUpvote: json['numUpvote'] ?? 0,
       status: json['status'],
-      basedOn: json['based_on'] ?? json['basedOn'],
-      author: json['author'] != null ? User.fromJson(json['author']) : null,
       route: json['route'] != null ? Route.fromJson(json['route']) : null,
-      basedOnBus:
-          json['based_on_bus'] != null
-              ? Bus.fromJson(json['based_on_bus'])
-              : null,
+      basedOn: json['basedOn'] != null ? Bus.fromJson(json['basedOn']) : null,
+      upvoted: json['upvoted'] ?? false,
+      installed: json['installed'] ?? false,
     );
   }
 
   Map<String, dynamic> toJson() {
     return {
       'id': id,
-      'author_id': authorId,
-      'route_id': routeId,
+      'name': name,
+      'authorName': authorName,
       'capacity': capacity,
-      'num_install': numInstall,
-      'num_upvote': numUpvote,
+      'numInstall': numInstall,
+      'numUpvote': numUpvote,
       'status': status,
-      'based_on': basedOn,
-      'author': author?.toJson(),
       'route': route?.toJson(),
-      'based_on_bus': basedOnBus?.toJson(),
+      'basedOn': basedOn?.toJson(),
+      'upvoted': upvoted,
+      'installed': installed,
     };
   }
 
   Bus copyWith({
     int? id,
-    int? authorId,
-    int? routeId,
+    String? name,
+    String? authorName,
     int? capacity,
     int? numInstall,
     int? numUpvote,
     String? status,
-    int? basedOn,
-    User? author,
     Route? route,
-    Bus? basedOnBus,
+    Bus? basedOn,
+    bool? upvoted,
+    bool? installed,
   }) {
     return Bus(
       id: id ?? this.id,
-      authorId: authorId ?? this.authorId,
-      routeId: routeId ?? this.routeId,
+      name: name ?? this.name,
+      authorName: authorName ?? this.authorName,
       capacity: capacity ?? this.capacity,
       numInstall: numInstall ?? this.numInstall,
       numUpvote: numUpvote ?? this.numUpvote,
       status: status ?? this.status,
-      basedOn: basedOn ?? this.basedOn,
-      author: author ?? this.author,
       route: route ?? this.route,
-      basedOnBus: basedOnBus ?? this.basedOnBus,
+      basedOn: basedOn ?? this.basedOn,
+      upvoted: upvoted ?? this.upvoted,
+      installed: installed ?? this.installed,
     );
   }
 
   @override
   String toString() {
-    return 'Bus{id: $id, capacity: $capacity, numInstall: $numInstall}';
+    return 'Bus{id: $id, name: $name, capacity: $capacity, numInstall: $numInstall, installed: $installed}';
   }
 
   @override

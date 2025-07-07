@@ -3,6 +3,10 @@ import 'package:arebbus/models/auth_response.dart' show AuthResponse;
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart' show debugPrint, kDebugMode, kIsWeb;
 import 'package:arebbus/models/comment.dart';
+import 'package:arebbus/models/bus.dart';
+import 'package:arebbus/models/bus_response.dart';
+import 'package:arebbus/models/stop.dart';
+import 'package:arebbus/models/route.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 
@@ -664,6 +668,176 @@ class ApiService {
         debugPrint('$key: $value');
       }
       debugPrint('======================');
+    }
+  }
+
+  // Bus API methods
+  Future<BusResponse> getAllBuses({int page = 0, int size = 10}) async {
+    try {
+      final response = await _dio.get(
+        '/bus/all',
+        queryParameters: {'page': page, 'size': size},
+      );
+      
+      if (response.statusCode == 200) {
+        return BusResponse.fromJson(response.data as Map<String, dynamic>);
+      } else {
+        throw DioException(
+          requestOptions: response.requestOptions,
+          response: response,
+          error: 'Failed to load buses: Status code ${response.statusCode}',
+        );
+      }
+    } on DioException catch (e) {
+      debugPrint('Error fetching buses: $e');
+      throw Exception('Failed to load buses: ${e.message}');
+    }
+  }
+
+  Future<BusResponse> getInstalledBuses({int page = 0, int size = 10}) async {
+    try {
+      final response = await _dio.get(
+        '/bus/installed',
+        queryParameters: {'page': page, 'size': size},
+      );
+      
+      if (response.statusCode == 200) {
+        return BusResponse.fromJson(response.data as Map<String, dynamic>);
+      } else {
+        throw DioException(
+          requestOptions: response.requestOptions,
+          response: response,
+          error: 'Failed to load installed buses: Status code ${response.statusCode}',
+        );
+      }
+    } on DioException catch (e) {
+      debugPrint('Error fetching installed buses: $e');
+      throw Exception('Failed to load installed buses: ${e.message}');
+    }
+  }
+
+  Future<Bus> getBusById(int busId) async {
+    try {
+      final response = await _dio.get(
+        '/bus',
+        queryParameters: {'busId': busId},
+      );
+      
+      if (response.statusCode == 200) {
+        return Bus.fromJson(response.data as Map<String, dynamic>);
+      } else if (response.statusCode == 404) {
+        throw Exception('Bus not found');
+      } else {
+        throw DioException(
+          requestOptions: response.requestOptions,
+          response: response,
+          error: 'Failed to load bus: Status code ${response.statusCode}',
+        );
+      }
+    } on DioException catch (e) {
+      debugPrint('Error fetching bus by ID $busId: $e');
+      if (e.response?.statusCode == 404) {
+        throw Exception('Bus not found');
+      }
+      throw Exception('Failed to load bus: ${e.message}');
+    }
+  }
+
+  Future<Map<String, dynamic>> installBus(int busId) async {
+    try {
+      final response = await _dio.post(
+        '/bus/install',
+        data: {'busId': busId},
+      );
+      
+      if (response.statusCode == 200) {
+        return response.data as Map<String, dynamic>;
+      } else {
+        throw DioException(
+          requestOptions: response.requestOptions,
+          response: response,
+          error: 'Failed to install bus: Status code ${response.statusCode}',
+        );
+      }
+    } on DioException catch (e) {
+      debugPrint('Error installing bus $busId: $e');
+      throw Exception('Failed to install bus: ${e.message}');
+    }
+  }
+
+  Future<Map<String, dynamic>> uninstallBus(int busId) async {
+    try {
+      final response = await _dio.post(
+        '/bus/uninstall',
+        data: {'busId': busId},
+      );
+      
+      if (response.statusCode == 200) {
+        return response.data as Map<String, dynamic>;
+      } else {
+        throw DioException(
+          requestOptions: response.requestOptions,
+          response: response,
+          error: 'Failed to uninstall bus: Status code ${response.statusCode}',
+        );
+      }
+    } on DioException catch (e) {
+      debugPrint('Error uninstalling bus $busId: $e');
+      throw Exception('Failed to uninstall bus: ${e.message}');
+    }
+  }
+
+  Future<Stop> getStopById(int stopId) async {
+    try {
+      final response = await _dio.get(
+        '/stop',
+        queryParameters: {'stopId': stopId},
+      );
+      
+      if (response.statusCode == 200) {
+        return Stop.fromJson(response.data as Map<String, dynamic>);
+      } else if (response.statusCode == 404) {
+        throw Exception('Stop not found');
+      } else {
+        throw DioException(
+          requestOptions: response.requestOptions,
+          response: response,
+          error: 'Failed to load stop: Status code ${response.statusCode}',
+        );
+      }
+    } on DioException catch (e) {
+      debugPrint('Error fetching stop by ID $stopId: $e');
+      if (e.response?.statusCode == 404) {
+        throw Exception('Stop not found');
+      }
+      throw Exception('Failed to load stop: ${e.message}');
+    }
+  }
+
+  Future<Route> getRouteById(int routeId) async {
+    try {
+      final response = await _dio.get(
+        '/route',
+        queryParameters: {'routeId': routeId},
+      );
+      
+      if (response.statusCode == 200) {
+        return Route.fromJson(response.data as Map<String, dynamic>);
+      } else if (response.statusCode == 404) {
+        throw Exception('Route not found');
+      } else {
+        throw DioException(
+          requestOptions: response.requestOptions,
+          response: response,
+          error: 'Failed to load route: Status code ${response.statusCode}',
+        );
+      }
+    } on DioException catch (e) {
+      debugPrint('Error fetching route by ID $routeId: $e');
+      if (e.response?.statusCode == 404) {
+        throw Exception('Route not found');
+      }
+      throw Exception('Failed to load route: ${e.message}');
     }
   }
 }
