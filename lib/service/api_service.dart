@@ -958,4 +958,37 @@ class ApiService {
       throw Exception('Failed to create bus: ${e.message}');
     }
   }
+
+  Future<List<Stop>> getNearbyStops({
+    required double latitude,
+    required double longitude,
+    double radius = 3.0, // Default 3km radius
+  }) async {
+    try {
+      final response = await _dio.get(
+        '/stop/near',
+        queryParameters: {
+          'latitude': latitude,
+          'longitude': longitude,
+          'radius': radius,
+        },
+      );
+      
+      if (response.statusCode == 200) {
+        final List<dynamic> stopsData = response.data as List<dynamic>;
+        return stopsData
+            .map((stopJson) => Stop.fromJson(stopJson as Map<String, dynamic>))
+            .toList();
+      } else {
+        throw DioException(
+          requestOptions: response.requestOptions,
+          response: response,
+          error: 'Failed to load nearby stops: Status code ${response.statusCode}',
+        );
+      }
+    } on DioException catch (e) {
+      debugPrint('Error fetching nearby stops: $e');
+      throw Exception('Failed to load nearby stops: ${e.message}');
+    }
+  }
 }

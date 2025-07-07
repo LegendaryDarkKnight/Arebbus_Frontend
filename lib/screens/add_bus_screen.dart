@@ -4,6 +4,7 @@ import 'package:latlong2/latlong.dart';
 import 'package:arebbus/models/route.dart' as model;
 import 'package:arebbus/models/stop.dart';
 import 'package:arebbus/service/api_service.dart';
+import 'dart:math' as math;
 
 class AddBusScreen extends StatefulWidget {
   const AddBusScreen({super.key});
@@ -251,8 +252,245 @@ class _AddBusScreenState extends State<AddBusScreen> {
         _pendingStopLocation = point;
       });
       _updateMapDisplay();
-      _showAddStopDialog();
+      _checkNearbyStopsAndShowDialog(point);
     }
+  }
+
+  Future<void> _checkNearbyStopsAndShowDialog(LatLng tappedLocation) async {
+    try {
+      // Check for nearby stops within 3km radius
+      final nearbyStops = await _apiService.getNearbyStops(
+        latitude: tappedLocation.latitude,
+        longitude: tappedLocation.longitude,
+        radius: 3.0,
+      );
+
+      if (mounted) {
+        if (nearbyStops.isNotEmpty) {
+          _showNearbyStopsDialog(tappedLocation, nearbyStops);
+        } else {
+          _showAddStopDialog();
+        }
+      }
+    } catch (e) {
+      // If there's an error fetching nearby stops, just proceed with creating a new stop
+      if (mounted) {
+        _showAddStopDialog();
+      }
+    }
+  }
+
+  void _showNearbyStopsDialog(LatLng tappedLocation, List<Stop> nearbyStops) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => Dialog(
+        child: Container(
+          width: MediaQuery.of(context).size.width * 0.9,
+          height: MediaQuery.of(context).size.height * 0.7,
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  const Icon(Icons.location_on, color: Colors.orange),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Nearby Stops Found',
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                  IconButton(
+                    onPressed: () {
+                      setState(() {
+                        _pendingStopLocation = null;
+                      });
+                      _updateMapDisplay();
+                      Navigator.pop(context);
+                    },
+                    icon: const Icon(Icons.close),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'We found ${nearbyStops.length} existing stop${nearbyStops.length > 1 ? 's' : ''} within 3km. You can select one or create a new stop.',
+                style: TextStyle(
+                  color: Colors.grey[600],
+                  fontSize: 14,
+                ),
+              ),
+              const SizedBox(height: 16),
+              
+              // Map preview showing nearby stops
+              Expanded(
+                flex: 2,
+                child: Container(
+                  decoration: BoxDecoration(
+                    border: Border.all(color: Colors.grey[300]!),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(8),
+                    child: FlutterMap(
+                      options: MapOptions(
+                        initialCenter: tappedLocation,
+                        initialZoom: 13,
+                      ),
+                      children: [
+                        TileLayer(
+                          urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                          userAgentPackageName: 'com.example.arebbus',
+                        ),
+                        MarkerLayer(
+                          markers: [
+                            // Tapped location marker
+                            Marker(
+                              point: tappedLocation,
+                              width: 40,
+                              height: 40,
+                              child: const Icon(
+                                Icons.add_location,
+                                color: Colors.orange,
+                                size: 40,
+                              ),
+                            ),
+                            // Nearby stops markers
+                            ...nearbyStops.map((stop) => Marker(
+                              point: LatLng(stop.latitude, stop.longitude),
+                              width: 40,
+                              height: 40,
+                              child: const Icon(
+                                Icons.location_on,
+                                color: Colors.blue,
+                                size: 40,
+                              ),
+                            )),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              
+              const SizedBox(height: 16),
+              
+              // Nearby stops list
+              Expanded(
+                flex: 2,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Select an existing stop:',
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Expanded(
+                      child: ListView.builder(
+                        itemCount: nearbyStops.length,
+                        itemBuilder: (context, index) {
+                          final stop = nearbyStops[index];
+                          final distance = _calculateDistance(
+                            tappedLocation.latitude,
+                            tappedLocation.longitude,
+                            stop.latitude,
+                            stop.longitude,
+                          );
+                          
+                          return Card(
+                            child: ListTile(
+                              leading: const CircleAvatar(
+                                backgroundColor: Colors.blue,
+                                child: Icon(Icons.location_on, color: Colors.white),
+                              ),
+                              title: Text(stop.name),
+                              subtitle: Text(
+                                'By ${stop.authorName ?? 'Unknown'} • ${distance.toStringAsFixed(1)}km away',
+                              ),
+                              trailing: const Icon(Icons.arrow_forward),
+                              onTap: () => _selectExistingStop(stop),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              
+              const SizedBox(height: 16),
+              
+              // Action buttons
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: () {
+                        Navigator.pop(context);
+                        _showAddStopDialog();
+                      },
+                      icon: const Icon(Icons.add),
+                      label: const Text('Create New Stop'),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      onPressed: () {
+                        setState(() {
+                          _pendingStopLocation = null;
+                        });
+                        _updateMapDisplay();
+                        Navigator.pop(context);
+                      },
+                      icon: const Icon(Icons.close),
+                      label: const Text('Cancel'),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _selectExistingStop(Stop stop) {
+    setState(() {
+      _customStops.add(stop);
+      _pendingStopLocation = null;
+    });
+    _updateMapDisplay();
+    Navigator.pop(context);
+  }
+
+  double _calculateDistance(double lat1, double lon1, double lat2, double lon2) {
+    // Simple distance calculation using Haversine formula
+    const double earthRadius = 6371; // Earth's radius in kilometers
+    
+    double dLat = _degreesToRadians(lat2 - lat1);
+    double dLon = _degreesToRadians(lon2 - lon1);
+    
+    double a = math.sin(dLat / 2) * math.sin(dLat / 2) +
+        math.cos(_degreesToRadians(lat1)) * math.cos(_degreesToRadians(lat2)) *
+        math.sin(dLon / 2) * math.sin(dLon / 2);
+    
+    double c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a));
+    
+    return earthRadius * c;
+  }
+
+  double _degreesToRadians(double degrees) {
+    return degrees * (math.pi / 180);
   }
 
   void _showAddStopDialog() {
@@ -260,7 +498,7 @@ class _AddBusScreenState extends State<AddBusScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Add Stop'),
+        title: const Text('Add New Stop'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -312,6 +550,7 @@ class _AddBusScreenState extends State<AddBusScreen> {
       latitude: _pendingStopLocation!.latitude,
       longitude: _pendingStopLocation!.longitude,
       authorId: 0, // Will be set by the server
+      authorName: null, // Will be set by the server
     );
 
     setState(() {
