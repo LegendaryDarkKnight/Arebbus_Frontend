@@ -20,6 +20,7 @@ void main() async {
 
 /// Route names used throughout the app
 class AppRoutes {
+  static const String authWrapper = '/';
   static const String login = '/login';
   static const String register = '/register';
   static const String home = '/home';
@@ -38,8 +39,9 @@ class ArebbusApp extends StatelessWidget {
       title: 'Arebbus New',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.buildTheme(),
-      home: AuthWrapper(), // Use AuthWrapper instead of initialRoute
+      initialRoute: AppRoutes.authWrapper,
       routes: {
+        AppRoutes.authWrapper: (context) => const AuthWrapper(),
         AppRoutes.login: (context) => const LoginScreen(),
         AppRoutes.register: (context) => const RegisterScreen(),
         AppRoutes.home: (context) => const HomeScreen(),
@@ -65,12 +67,17 @@ class AuthWrapper extends StatelessWidget {
           );
         }
 
-        // Show home screen if logged in, otherwise show login screen
-        if (authProvider.isLoggedIn) {
-          return const HomeScreen();
-        } else {
-          return const LoginScreen();
-        }
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (authProvider.isLoggedIn) {
+            Navigator.of(context).pushReplacementNamed(AppRoutes.home);
+          } else {
+            Navigator.of(context).pushReplacementNamed(AppRoutes.login);
+          }
+        });
+
+        return const Scaffold(
+          body: Center(child: CircularProgressIndicator()),
+        );
       },
     );
   }

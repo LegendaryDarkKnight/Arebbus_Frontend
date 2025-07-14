@@ -1,7 +1,6 @@
 import 'package:arebbus/models/comment.dart';
 import 'package:arebbus/models/post.dart';
 import 'package:arebbus/models/tag.dart';
-import 'package:arebbus/models/user.dart';
 import 'package:arebbus/service/api_service.dart';
 import 'package:flutter/foundation.dart';
 
@@ -31,24 +30,15 @@ class FeedScreenUtils {
 
     try {
       return rawPosts.map<Post>((postData) {
-        // if (postData is! Map<String, dynamic>) {
-        //   debugPrint("Invalid post data format: $postData");
-        //   return [];
-        // }
-
         return Post(
-          id:
-              postData['postId']?.toInt() ??
-              DateTime.now().millisecondsSinceEpoch,
+          id: postData['postId']?.toInt() ?? DateTime.now().millisecondsSinceEpoch,
+          authorName: postData['authorName']?.toString() ?? 'Anonymous',
+          authorImage: 'https://picsum.photos/seed/picsum/200/300',
           content: postData['content']?.toString() ?? '',
           numUpvote: postData['numUpvote']?.toInt() ?? 0,
-          timestamp: _parseDateTime(postData['createdAt']),
+          createdAt: _parseDateTime(postData['createdAt']),
           tags: _parseTags(postData['tags']),
           comments: _parseComments(postData['comments']),
-          author: User(
-            name: postData['authorName']?.toString() ?? 'Anonymous',
-            image: 'https://picsum.photos/seed/picsum/200/300',
-          ),
           upvoted: postData['upvoted'],
         );
       }).toList();
@@ -100,18 +90,13 @@ class FeedScreenUtils {
             if (commentData is! Map<String, dynamic>) return null;
 
             return Comment(
-              id:
-                  commentData['id']?.toInt() ??
-                  DateTime.now().millisecondsSinceEpoch,
-              content: commentData['content']?.toString() ?? '',
-              postId: commentData['postId']?.toInt() ?? 0,
-              numUpvote: commentData['numUpvote']?.toInt() ?? 0,
-              timestamp: _parseDateTime(commentData['createdAt']),
-              author: User(
-                name: commentData['authorName']?.toString() ?? 'Anonymous',
-                image: 'https://picsum.photos/seed/picsum/200/300',
-              ),
-              authorId: commentData['authorId']?.toInt() ?? 1,
+              id: commentData['id'],
+              content: commentData['content'],
+              postId: commentData['postId'],
+              authorName: commentData['authorName'],
+              numUpvote: commentData['numUpvote'],
+              createdAt: _parseDateTime(commentData['createdAt']),
+              upvoted: commentData['upvoted'],
             );
           })
           .where((comment) => comment != null)
@@ -294,7 +279,6 @@ class FeedScreenUtils {
       filteredPosts =
           filteredPosts.where((post) {
             return post.content.toLowerCase().contains(query) ||
-                (post.author?.name.toLowerCase().contains(query) ?? false) ||
                 (post.tags?.any(
                       (tag) => tag.name.toLowerCase().contains(query),
                     ) ??
@@ -305,7 +289,7 @@ class FeedScreenUtils {
     // Apply sorting
     switch (sortBy) {
       case 'Recent':
-        filteredPosts.sort((a, b) => b.timestamp.compareTo(a.timestamp));
+        filteredPosts.sort((a, b) => b.createdAt.compareTo(a.createdAt));
         break;
       case 'Popular':
         filteredPosts.sort((a, b) => b.numUpvote.compareTo(a.numUpvote));
@@ -337,7 +321,7 @@ class FeedScreenUtils {
     updatedPosts =
         posts.map((post) {
           if (post.id == postId) {
-            final isUpvoted = post.upvoted ?? false;
+            final isUpvoted = post.upvoted;
             newUpvoteStatus = !isUpvoted;
             return post.copyWith(
               numUpvote: isUpvoted ? post.numUpvote - 1 : post.numUpvote + 1,
@@ -350,7 +334,7 @@ class FeedScreenUtils {
     updatedFilteredPosts =
         filteredPosts.map((post) {
           if (post.id == postId) {
-            final isUpvoted = post.upvoted ?? false;
+            final isUpvoted = post.upvoted;
             return post.copyWith(
               numUpvote: isUpvoted ? post.numUpvote - 1 : post.numUpvote + 1,
               upvoted: !isUpvoted,
@@ -372,50 +356,6 @@ class FeedScreenUtils {
       debugPrint('Error during upvote toggle: $e');
       onErrorReload(); // Trigger reload and show alert in UI
     }
-
-    return {'posts': updatedPosts, 'filteredPosts': updatedFilteredPosts};
-  }
-
-  Map<String, List<Post>> addComment({
-    required List<Post> posts,
-    required List<Post> filteredPosts,
-    required int? postId,
-    required String commentContent,
-  }) {
-    if (postId == null || commentContent.trim().isEmpty) {
-      return {'posts': posts, 'filteredPosts': filteredPosts};
-    }
-
-    final newComment = Comment(
-      id: DateTime.now().millisecondsSinceEpoch,
-      content: commentContent.trim(),
-      authorId: 1, // Mock user ID
-      postId: postId,
-      numUpvote: 0,
-      timestamp: DateTime.now(),
-      author: User(
-        name: 'Anonymous', // Mock author name
-        image: 'https://picsum.photos/seed/picsum/200/300',
-      ),
-    );
-
-    final updatedPosts =
-        posts.map((post) {
-          if (post.id == postId) {
-            final updatedComments = [...?post.comments, newComment];
-            return post.copyWith(comments: updatedComments);
-          }
-          return post;
-        }).toList();
-
-    final updatedFilteredPosts =
-        filteredPosts.map((post) {
-          if (post.id == postId) {
-            final updatedComments = [...?post.comments, newComment];
-            return post.copyWith(comments: updatedComments);
-          }
-          return post;
-        }).toList();
 
     return {'posts': updatedPosts, 'filteredPosts': updatedFilteredPosts};
   }
@@ -449,15 +389,14 @@ class FeedScreenUtils {
 
       final newPost = Post(
         id: data['postId']?.toInt() ?? DateTime.now().millisecondsSinceEpoch,
+        authorName: data['authorName']?.toString() ?? 'Anonymous',
+        authorImage: 'https://picsum.photos/seed/picsum/200/300',
         content: trimmedContent,
         numUpvote: 0,
-        timestamp: DateTime.now(),
+        createdAt: DateTime.now(),
         tags: cleanTagNames.map((name) => Tag(id: null, name: name)).toList(),
         comments: [],
-        author: User(
-          name: data['authorName']?.toString() ?? 'Anonymous',
-          image: 'https://picsum.photos/seed/picsum/200/300',
-        ),
+        upvoted: false,
       );
 
       // Update available filter tags

@@ -32,9 +32,8 @@ class CommentCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    // Assuming comment.author is populated. If not, you'd fetch user by comment.authorId
-    final authorName = comment.author?.name ?? 'Somik Dasguta';
-    final authorImageUrl = comment.author?.image;
+    final authorName = comment.authorName ;
+    final authorImageUrl = comment.authorImage?? 'https://picsum.photos/seed/picsum/200/300';
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 4.0),
@@ -45,11 +44,11 @@ class CommentCard extends StatelessWidget {
             radius: 18,
             backgroundColor: theme.colorScheme.surfaceContainerHighest,
             backgroundImage:
-                (authorImageUrl != null && authorImageUrl.isNotEmpty)
+                (authorImageUrl.isNotEmpty)
                     ? NetworkImage(authorImageUrl)
                     : null,
             child:
-                (authorImageUrl == null || authorImageUrl.isEmpty)
+                (authorImageUrl.isEmpty)
                     ? Text(
                       authorName.isNotEmpty ? authorName[0].toUpperCase() : 'S',
                       style: TextStyle(
@@ -99,7 +98,7 @@ class CommentCard extends StatelessWidget {
                 Padding(
                   padding: const EdgeInsets.only(left: 4.0),
                   child: Text(
-                    _formatTimestamp(comment.timestamp),
+                    _formatTimestamp(comment.createdAt),
                     style: theme.textTheme.bodySmall?.copyWith(
                       color: theme.colorScheme.outline,
                       fontSize: 11,

@@ -4,7 +4,6 @@ import 'package:arebbus/models/bus_response.dart';
 import 'package:arebbus/models/route.dart';
 import 'package:arebbus/models/route_response.dart';
 import 'package:arebbus/models/stop.dart';
-import 'package:arebbus/service/api_service.dart';
 
 class MockApiService {
   // Mock data
@@ -14,7 +13,7 @@ class MockApiService {
       name: "Central Bus Station",
       latitude: 40.7128,
       longitude: -74.0060,
-      authorId: 1,
+      // authorId: 1,
       authorName: "John Doe",
     ),
     Stop(
@@ -22,7 +21,7 @@ class MockApiService {
       name: "Downtown Terminal",
       latitude: 40.7589,
       longitude: -73.9851,
-      authorId: 2,
+      // authorId: 2,
       authorName: "Jane Smith",
     ),
     Stop(
@@ -30,7 +29,7 @@ class MockApiService {
       name: "Shopping Mall",
       latitude: 40.7505,
       longitude: -73.9934,
-      authorId: 3,
+      // authorId: 3,
       authorName: "Bob Wilson",
     ),
     Stop(
@@ -38,7 +37,7 @@ class MockApiService {
       name: "University Campus",
       latitude: 40.7282,
       longitude: -73.9942,
-      authorId: 4,
+      // authorId: 4,
       authorName: "Alice Brown",
     ),
     Stop(
@@ -46,7 +45,7 @@ class MockApiService {
       name: "Airport Terminal",
       latitude: 40.6413,
       longitude: -73.7781,
-      authorId: 5,
+      // authorId: 5,
       authorName: "Carol Davis",
     ),
   ];
@@ -200,7 +199,7 @@ class MockApiService {
       name: name,
       latitude: latitude,
       longitude: longitude,
-      authorId: 1,
+      // authorId: 1,
       authorName: "Test User",
     );
   }

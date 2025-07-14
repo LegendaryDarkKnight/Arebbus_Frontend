@@ -1,12 +1,13 @@
 import 'package:arebbus/config/app_config.dart' show AppConfig;
 import 'package:arebbus/models/auth_response.dart' show AuthResponse;
+import 'package:arebbus/models/stop.dart';
+import 'package:arebbus/models/stop_response.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart' show debugPrint, kDebugMode, kIsWeb;
 import 'package:arebbus/models/comment.dart';
 import 'package:arebbus/models/bus.dart';
 import 'package:arebbus/models/bus_response.dart';
 import 'package:arebbus/models/route_response.dart';
-import 'package:arebbus/models/stop.dart';
 import 'package:arebbus/models/route.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
@@ -48,8 +49,6 @@ class ApiService {
           // Handle token expiration (401 Unauthorized)
           if (error.response?.statusCode == 401) {
             await logout();
-            // You might want to navigate to login screen here
-            // or emit an event that the auth provider can listen to
           }
           handler.next(error);
         },
@@ -483,8 +482,6 @@ class ApiService {
     }
   }
 
-  // Add these functions to your API service class
-
   Future<Map<String, dynamic>> togglePostUpvote(int postId) async {
     try {
       debugPrint('Toggling upvote for post ID: $postId');
@@ -636,6 +633,75 @@ class ApiService {
       'upvoted': responseData['upvoteStatus'],
       'toggledAt': responseData['toggledAt'],
     };
+  }
+
+  // Future<Stop> createStop(String name, double latitude, double longitude) async {
+  //   try {
+  //     final response = await _dio.post(
+  //       '/stop/create',
+  //       data: {
+  //         'name': name,
+  //         'latitude': latitude,
+  //         'longitude': longitude,
+  //       },
+  //     );
+  //     if (response.statusCode == 200 || response.statusCode == 201) {
+  //       return Stop.fromJson(response.data as Map<String, dynamic>);
+  //     } else {
+  //       throw DioException(
+  //         requestOptions: response.requestOptions,
+  //         response: response,
+  //         error: 'Failed to create stop: Status code ${response.statusCode}',
+  //       );
+  //     }
+  //   } on DioException catch (e) {
+  //     debugPrint('Error creating stop: $e');
+  //     throw Exception('Failed to create stop: ${e.message}');
+  //   }
+  // }
+
+  Future<Stop> fetchStop(int stopId) async {
+    try {
+      final response = await _dio.get('/stop', queryParameters: {'stopId': stopId});
+      if (response.statusCode == 200) {
+        return Stop.fromJson(response.data as Map<String, dynamic>);
+      } else if (response.statusCode == 404) {
+        throw Exception('Stop with id $stopId not found');
+      } else {
+        throw DioException(
+          requestOptions: response.requestOptions,
+          response: response,
+          error: 'Failed to fetch stop: Status code ${response.statusCode}',
+        );
+      }
+    } on DioException catch (e) {
+      debugPrint('Error fetching stop $stopId: $e');
+      if (e.response?.statusCode == 404) {
+        throw Exception('Stop with id $stopId not found');
+      }
+      throw Exception('Failed to fetch stop: ${e.message}');
+    }
+  }
+
+  Future<StopResponse> fetchAllStops({int page = 0, int size = 10}) async {
+    try {
+      final response = await _dio.get(
+        '/stop/all',
+        queryParameters: {'page': page, 'size': size},
+      );
+      if (response.statusCode == 200) {
+        return StopResponse.fromJson(response.data as Map<String, dynamic>);
+      } else {
+        throw DioException(
+          requestOptions: response.requestOptions,
+          response: response,
+          error: 'Failed to fetch stops: Status code ${response.statusCode}',
+        );
+      }
+    } on DioException catch (e) {
+      debugPrint('Error fetching stops (page: $page, size: $size): $e');
+      throw Exception('Failed to fetch stops: ${e.message}');
+    }
   }
 
   Future<void> debugPrintStoredAuth() async {
@@ -879,7 +945,7 @@ class ApiService {
           'longitude': longitude,
         },
       );
-      
+
       if (response.statusCode == 200) {
         return Stop.fromJson(response.data as Map<String, dynamic>);
       } else {

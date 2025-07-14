@@ -1,41 +1,37 @@
 import 'package:arebbus/models/comment.dart';
 import 'package:arebbus/models/tag.dart';
-import 'package:arebbus/models/user.dart';
 
 class Post {
   final int id;
-  final int? authorId;
+  final String authorName;
+  final String? authorImage;
   final String content;
   final int numUpvote;
-  final DateTime timestamp; // Added timestamp for sorting
-  final User? author;
   final List<Tag>? tags;
+  final DateTime createdAt;
   final List<Comment>? comments;
-  final bool? upvoted;
+  final bool upvoted;
 
   Post({
     required this.id,
-    this.authorId,
+    required this.authorName,
+    this.authorImage,
     required this.content,
     required this.numUpvote,
-    required this.timestamp,
-    this.author,
+    required this.createdAt,
     this.tags,
     this.comments,
-    this.upvoted,
+    required this.upvoted,
   });
 
   factory Post.fromJson(Map<String, dynamic> json) {
     return Post(
       id: json['id'],
-      authorId: json['author_id'] ?? json['authorId'],
+      authorName: json['authorName'],
+      authorImage: json['authorImage'],
       content: json['content'] ?? '',
-      numUpvote: json['num_upvote'] ?? json['numUpvote'] ?? 0,
-      timestamp:
-          json['timestamp'] != null
-              ? DateTime.parse(json['timestamp'])
-              : DateTime.now(),
-      author: json['author'] != null ? User.fromJson(json['author']) : null,
+      numUpvote: json['numUpvote'] ?? 0,
+      createdAt: json['createdAt'] ??DateTime.now(),
       tags:
           json['tags'] != null
               ? (json['tags'] as List).map((tag) => Tag.fromJson(tag)).toList()
@@ -53,12 +49,12 @@ class Post {
   Map<String, dynamic> toJson() {
     return {
       'id': id,
-      'author_id': authorId,
+      'authorName': authorName,
+      'authorImage': authorImage,
       'content': content,
-      'num_upvote': numUpvote,
-      'timestamp': timestamp.toIso8601String(),
-      'author': author?.toJson(),
+      'numUpvote': numUpvote,
       'tags': tags?.map((tag) => tag.toJson()).toList(),
+      'createdAt': createdAt.toIso8601String(),
       'comments': comments?.map((comment) => comment.toJson()).toList(),
       'upvoted': upvoted,
     };
@@ -66,23 +62,23 @@ class Post {
 
   Post copyWith({
     int? id,
-    int? authorId,
+    String? authorName,
+    String? authorImage,
     String? content,
     int? numUpvote,
-    DateTime? timestamp,
-    User? author,
     List<Tag>? tags,
+    DateTime? createdAt,
     List<Comment>? comments,
     bool? upvoted,
   }) {
     return Post(
       id: id ?? this.id,
-      authorId: authorId ?? this.authorId,
+      authorName: authorName ?? this.authorName,
+      authorImage: authorImage ?? this.authorImage,
       content: content ?? this.content,
       numUpvote: numUpvote ?? this.numUpvote,
-      timestamp: timestamp ?? this.timestamp,
-      author: author ?? this.author,
       tags: tags ?? this.tags,
+      createdAt: createdAt ?? this.createdAt,
       comments: comments ?? this.comments,
       upvoted: upvoted ?? this.upvoted,
     );

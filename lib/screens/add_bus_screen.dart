@@ -1,9 +1,11 @@
+import 'package:arebbus/models/auth_response.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:arebbus/models/route.dart' as model;
 import 'package:arebbus/models/stop.dart';
 import 'package:arebbus/service/api_service.dart';
+
 import 'dart:math' as math;
 
 class AddBusScreen extends StatefulWidget {
@@ -17,35 +19,36 @@ class _AddBusScreenState extends State<AddBusScreen> {
   final ApiService _apiService = ApiService.instance;
   final MapController _mapController = MapController();
   final _formKey = GlobalKey<FormState>();
-  
+
   // Form controllers
   final _busNameController = TextEditingController();
   final _capacityController = TextEditingController();
   final _routeNameController = TextEditingController();
   final _stopNameController = TextEditingController();
-  
+
   // Route selection state
   bool _useExistingRoute = true;
   model.Route? _selectedRoute;
   List<model.Route> _availableRoutes = [];
   bool _isLoadingRoutes = false;
-  
+
   // Custom route creation state
   final List<Stop> _customStops = [];
   LatLng? _pendingStopLocation;
   final bool _isCreatingStop = false;
-  
+
   // Map state
   final List<Marker> _markers = [];
   final List<Polyline> _polylines = [];
   final LatLng _initialCenter = const LatLng(40.7128, -74.0060); // NYC default
-  
+
   // UI state
   bool _isCreatingBus = false;
-
+  late AuthResponse _authResponse;
   @override
-  void initState() {
+  Future<void> initState() async {
     super.initState();
+    _authResponse = (await _apiService.getUserData())!;
     _loadAvailableRoutes();
   }
 
@@ -109,7 +112,7 @@ class _AddBusScreenState extends State<AddBusScreen> {
 
   void _displayExistingRoute(model.Route route) {
     final stops = route.stops;
-    
+
     // Add markers for each stop
     for (int i = 0; i < stops.length; i++) {
       final stop = stops[i];
@@ -120,9 +123,12 @@ class _AddBusScreenState extends State<AddBusScreen> {
           height: 40,
           child: Icon(
             Icons.location_on,
-            color: i == 0 ? Colors.green : 
-                   i == stops.length - 1 ? Colors.red : 
-                   Colors.blue,
+            color:
+                i == 0
+                    ? Colors.green
+                    : i == stops.length - 1
+                    ? Colors.red
+                    : Colors.blue,
             size: 40,
           ),
         ),
@@ -133,7 +139,10 @@ class _AddBusScreenState extends State<AddBusScreen> {
     if (stops.length > 1) {
       _polylines.add(
         Polyline(
-          points: stops.map((stop) => LatLng(stop.latitude, stop.longitude)).toList(),
+          points:
+              stops
+                  .map((stop) => LatLng(stop.latitude, stop.longitude))
+                  .toList(),
           color: Colors.blue,
           strokeWidth: 3,
         ),
@@ -142,7 +151,9 @@ class _AddBusScreenState extends State<AddBusScreen> {
 
     // Fit map to show all stops
     if (stops.isNotEmpty) {
-      _fitMapToStops(stops.map((s) => LatLng(s.latitude, s.longitude)).toList());
+      _fitMapToStops(
+        stops.map((s) => LatLng(s.latitude, s.longitude)).toList(),
+      );
     }
   }
 
@@ -159,9 +170,12 @@ class _AddBusScreenState extends State<AddBusScreen> {
             children: [
               Icon(
                 Icons.location_on,
-                color: i == 0 ? Colors.green : 
-                       i == _customStops.length - 1 ? Colors.red : 
-                       Colors.blue,
+                color:
+                    i == 0
+                        ? Colors.green
+                        : i == _customStops.length - 1
+                        ? Colors.red
+                        : Colors.blue,
                 size: 40,
               ),
               Positioned(
@@ -169,7 +183,10 @@ class _AddBusScreenState extends State<AddBusScreen> {
                 left: 0,
                 right: 0,
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 4,
+                    vertical: 2,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(8),
@@ -178,7 +195,10 @@ class _AddBusScreenState extends State<AddBusScreen> {
                   child: Text(
                     '${i + 1}',
                     textAlign: TextAlign.center,
-                    style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold),
+                    style: const TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
               ),
@@ -195,11 +215,7 @@ class _AddBusScreenState extends State<AddBusScreen> {
           point: _pendingStopLocation!,
           width: 40,
           height: 40,
-          child: const Icon(
-            Icons.add_location,
-            color: Colors.orange,
-            size: 40,
-          ),
+          child: const Icon(Icons.add_location, color: Colors.orange, size: 40),
         ),
       );
     }
@@ -208,7 +224,10 @@ class _AddBusScreenState extends State<AddBusScreen> {
     if (_customStops.length > 1) {
       _polylines.add(
         Polyline(
-          points: _customStops.map((stop) => LatLng(stop.latitude, stop.longitude)).toList(),
+          points:
+              _customStops
+                  .map((stop) => LatLng(stop.latitude, stop.longitude))
+                  .toList(),
           color: Colors.blue,
           strokeWidth: 3,
         ),
@@ -218,7 +237,7 @@ class _AddBusScreenState extends State<AddBusScreen> {
 
   void _fitMapToStops(List<LatLng> points) {
     if (points.isEmpty) return;
-    
+
     if (points.length == 1) {
       _mapController.move(points.first, 15);
       return;
@@ -236,10 +255,7 @@ class _AddBusScreenState extends State<AddBusScreen> {
       maxLng = point.longitude > maxLng ? point.longitude : maxLng;
     }
 
-    final bounds = LatLngBounds(
-      LatLng(minLat, minLng),
-      LatLng(maxLat, maxLng),
-    );
+    final bounds = LatLngBounds(LatLng(minLat, minLng), LatLng(maxLat, maxLng));
 
     _mapController.fitCamera(
       CameraFit.bounds(bounds: bounds, padding: const EdgeInsets.all(50)),
@@ -284,183 +300,188 @@ class _AddBusScreenState extends State<AddBusScreen> {
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) => Dialog(
-        child: Container(
-          width: MediaQuery.of(context).size.width * 0.9,
-          height: MediaQuery.of(context).size.height * 0.7,
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
+      builder:
+          (context) => Dialog(
+            child: Container(
+              width: MediaQuery.of(context).size.width * 0.9,
+              height: MediaQuery.of(context).size.height * 0.7,
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Icon(Icons.location_on, color: Colors.orange),
-                  const SizedBox(width: 8),
+                  Row(
+                    children: [
+                      const Icon(Icons.location_on, color: Colors.orange),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'Nearby Stops Found',
+                          style: Theme.of(context).textTheme.titleLarge
+                              ?.copyWith(fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                      IconButton(
+                        onPressed: () {
+                          setState(() {
+                            _pendingStopLocation = null;
+                          });
+                          _updateMapDisplay();
+                          Navigator.pop(context);
+                        },
+                        icon: const Icon(Icons.close),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'We found ${nearbyStops.length} existing stop${nearbyStops.length > 1 ? 's' : ''} within 3km. You can select one or create a new stop.',
+                    style: TextStyle(color: Colors.grey[600], fontSize: 14),
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Map preview showing nearby stops
                   Expanded(
-                    child: Text(
-                      'Nearby Stops Found',
-                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.bold,
+                    flex: 2,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        border: Border.all(color: Colors.grey[300]!),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: FlutterMap(
+                          options: MapOptions(
+                            initialCenter: tappedLocation,
+                            initialZoom: 13,
+                          ),
+                          children: [
+                            TileLayer(
+                              urlTemplate:
+                                  'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                              userAgentPackageName: 'com.example.arebbus',
+                            ),
+                            MarkerLayer(
+                              markers: [
+                                // Tapped location marker
+                                Marker(
+                                  point: tappedLocation,
+                                  width: 40,
+                                  height: 40,
+                                  child: const Icon(
+                                    Icons.add_location,
+                                    color: Colors.orange,
+                                    size: 40,
+                                  ),
+                                ),
+                                // Nearby stops markers
+                                ...nearbyStops.map(
+                                  (stop) => Marker(
+                                    point: LatLng(
+                                      stop.latitude,
+                                      stop.longitude,
+                                    ),
+                                    width: 40,
+                                    height: 40,
+                                    child: const Icon(
+                                      Icons.location_on,
+                                      color: Colors.blue,
+                                      size: 40,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ),
-                  IconButton(
-                    onPressed: () {
-                      setState(() {
-                        _pendingStopLocation = null;
-                      });
-                      _updateMapDisplay();
-                      Navigator.pop(context);
-                    },
-                    icon: const Icon(Icons.close),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'We found ${nearbyStops.length} existing stop${nearbyStops.length > 1 ? 's' : ''} within 3km. You can select one or create a new stop.',
-                style: TextStyle(
-                  color: Colors.grey[600],
-                  fontSize: 14,
-                ),
-              ),
-              const SizedBox(height: 16),
-              
-              // Map preview showing nearby stops
-              Expanded(
-                flex: 2,
-                child: Container(
-                  decoration: BoxDecoration(
-                    border: Border.all(color: Colors.grey[300]!),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(8),
-                    child: FlutterMap(
-                      options: MapOptions(
-                        initialCenter: tappedLocation,
-                        initialZoom: 13,
-                      ),
+
+                  const SizedBox(height: 16),
+
+                  // Nearby stops list
+                  Expanded(
+                    flex: 2,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        TileLayer(
-                          urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                          userAgentPackageName: 'com.example.arebbus',
+                        Text(
+                          'Select an existing stop:',
+                          style: Theme.of(context).textTheme.titleMedium
+                              ?.copyWith(fontWeight: FontWeight.bold),
                         ),
-                        MarkerLayer(
-                          markers: [
-                            // Tapped location marker
-                            Marker(
-                              point: tappedLocation,
-                              width: 40,
-                              height: 40,
-                              child: const Icon(
-                                Icons.add_location,
-                                color: Colors.orange,
-                                size: 40,
-                              ),
-                            ),
-                            // Nearby stops markers
-                            ...nearbyStops.map((stop) => Marker(
-                              point: LatLng(stop.latitude, stop.longitude),
-                              width: 40,
-                              height: 40,
-                              child: const Icon(
-                                Icons.location_on,
-                                color: Colors.blue,
-                                size: 40,
-                              ),
-                            )),
-                          ],
+                        const SizedBox(height: 8),
+                        Expanded(
+                          child: ListView.builder(
+                            itemCount: nearbyStops.length,
+                            itemBuilder: (context, index) {
+                              final stop = nearbyStops[index];
+                              final distance = _calculateDistance(
+                                tappedLocation.latitude,
+                                tappedLocation.longitude,
+                                stop.latitude,
+                                stop.longitude,
+                              );
+
+                              return Card(
+                                child: ListTile(
+                                  leading: const CircleAvatar(
+                                    backgroundColor: Colors.blue,
+                                    child: Icon(
+                                      Icons.location_on,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                  title: Text(stop.name),
+                                  subtitle: Text(
+                                    'By ${stop.authorName} • ${distance.toStringAsFixed(1)}km away',
+                                  ),
+                                  trailing: const Icon(Icons.arrow_forward),
+                                  onTap: () => _selectExistingStop(stop),
+                                ),
+                              );
+                            },
+                          ),
                         ),
                       ],
                     ),
                   ),
-                ),
-              ),
-              
-              const SizedBox(height: 16),
-              
-              // Nearby stops list
-              Expanded(
-                flex: 2,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Select an existing stop:',
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
+
+                  const SizedBox(height: 16),
+
+                  // Action buttons
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: () {
+                            Navigator.pop(context);
+                            _showAddStopDialog();
+                          },
+                          icon: const Icon(Icons.add),
+                          label: const Text('Create New Stop'),
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 8),
-                    Expanded(
-                      child: ListView.builder(
-                        itemCount: nearbyStops.length,
-                        itemBuilder: (context, index) {
-                          final stop = nearbyStops[index];
-                          final distance = _calculateDistance(
-                            tappedLocation.latitude,
-                            tappedLocation.longitude,
-                            stop.latitude,
-                            stop.longitude,
-                          );
-                          
-                          return Card(
-                            child: ListTile(
-                              leading: const CircleAvatar(
-                                backgroundColor: Colors.blue,
-                                child: Icon(Icons.location_on, color: Colors.white),
-                              ),
-                              title: Text(stop.name),
-                              subtitle: Text(
-                                'By ${stop.authorName ?? 'Unknown'} • ${distance.toStringAsFixed(1)}km away',
-                              ),
-                              trailing: const Icon(Icons.arrow_forward),
-                              onTap: () => _selectExistingStop(stop),
-                            ),
-                          );
-                        },
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: ElevatedButton.icon(
+                          onPressed: () {
+                            setState(() {
+                              _pendingStopLocation = null;
+                            });
+                            _updateMapDisplay();
+                            Navigator.pop(context);
+                          },
+                          icon: const Icon(Icons.close),
+                          label: const Text('Cancel'),
+                        ),
                       ),
-                    ),
-                  ],
-                ),
-              ),
-              
-              const SizedBox(height: 16),
-              
-              // Action buttons
-              Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton.icon(
-                      onPressed: () {
-                        Navigator.pop(context);
-                        _showAddStopDialog();
-                      },
-                      icon: const Icon(Icons.add),
-                      label: const Text('Create New Stop'),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: ElevatedButton.icon(
-                      onPressed: () {
-                        setState(() {
-                          _pendingStopLocation = null;
-                        });
-                        _updateMapDisplay();
-                        Navigator.pop(context);
-                      },
-                      icon: const Icon(Icons.close),
-                      label: const Text('Cancel'),
-                    ),
+                    ],
                   ),
                 ],
               ),
-            ],
+            ),
           ),
-        ),
-      ),
     );
   }
 
@@ -473,19 +494,27 @@ class _AddBusScreenState extends State<AddBusScreen> {
     Navigator.pop(context);
   }
 
-  double _calculateDistance(double lat1, double lon1, double lat2, double lon2) {
+  double _calculateDistance(
+    double lat1,
+    double lon1,
+    double lat2,
+    double lon2,
+  ) {
     // Simple distance calculation using Haversine formula
     const double earthRadius = 6371; // Earth's radius in kilometers
-    
+
     double dLat = _degreesToRadians(lat2 - lat1);
     double dLon = _degreesToRadians(lon2 - lon1);
-    
-    double a = math.sin(dLat / 2) * math.sin(dLat / 2) +
-        math.cos(_degreesToRadians(lat1)) * math.cos(_degreesToRadians(lat2)) *
-        math.sin(dLon / 2) * math.sin(dLon / 2);
-    
+
+    double a =
+        math.sin(dLat / 2) * math.sin(dLat / 2) +
+        math.cos(_degreesToRadians(lat1)) *
+            math.cos(_degreesToRadians(lat2)) *
+            math.sin(dLon / 2) *
+            math.sin(dLon / 2);
+
     double c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a));
-    
+
     return earthRadius * c;
   }
 
@@ -497,51 +526,47 @@ class _AddBusScreenState extends State<AddBusScreen> {
     _stopNameController.clear();
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Add New Stop'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: _stopNameController,
-              decoration: const InputDecoration(
-                labelText: 'Stop Name',
-                hintText: 'Enter stop name',
-              ),
+      builder:
+          (context) => AlertDialog(
+            title: const Text('Add New Stop'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: _stopNameController,
+                  decoration: const InputDecoration(
+                    labelText: 'Stop Name',
+                    hintText: 'Enter stop name',
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'Lat: ${_pendingStopLocation?.latitude.toStringAsFixed(6)}\n'
+                  'Lng: ${_pendingStopLocation?.longitude.toStringAsFixed(6)}',
+                  style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                ),
+              ],
             ),
-            const SizedBox(height: 16),
-            Text(
-              'Lat: ${_pendingStopLocation?.latitude.toStringAsFixed(6)}\n'
-              'Lng: ${_pendingStopLocation?.longitude.toStringAsFixed(6)}',
-              style: TextStyle(
-                fontSize: 12,
-                color: Colors.grey[600],
+            actions: [
+              TextButton(
+                onPressed: () {
+                  setState(() {
+                    _pendingStopLocation = null;
+                  });
+                  _updateMapDisplay();
+                  Navigator.pop(context);
+                },
+                child: const Text('Cancel'),
               ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () {
-              setState(() {
-                _pendingStopLocation = null;
-              });
-              _updateMapDisplay();
-              Navigator.pop(context);
-            },
-            child: const Text('Cancel'),
+              TextButton(onPressed: _addCustomStop, child: const Text('Add')),
+            ],
           ),
-          TextButton(
-            onPressed: _addCustomStop,
-            child: const Text('Add'),
-          ),
-        ],
-      ),
     );
   }
 
   void _addCustomStop() {
-    if (_stopNameController.text.trim().isEmpty || _pendingStopLocation == null) {
+    if (_stopNameController.text.trim().isEmpty ||
+        _pendingStopLocation == null) {
       return;
     }
 
@@ -549,8 +574,7 @@ class _AddBusScreenState extends State<AddBusScreen> {
       name: _stopNameController.text.trim(),
       latitude: _pendingStopLocation!.latitude,
       longitude: _pendingStopLocation!.longitude,
-      authorId: 0, // Will be set by the server
-      authorName: null, // Will be set by the server
+      authorName: _authResponse.username, // Will be set by the server
     );
 
     setState(() {
@@ -619,7 +643,7 @@ class _AddBusScreenState extends State<AddBusScreen> {
   Future<int> _createCustomRoute() async {
     // First, create all the stops
     List<int> stopIds = [];
-    
+
     for (final stop in _customStops) {
       final createdStop = await _apiService.createStop(
         name: stop.name,
@@ -640,19 +664,13 @@ class _AddBusScreenState extends State<AddBusScreen> {
 
   void _showErrorSnackBar(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: Colors.red,
-      ),
+      SnackBar(content: Text(message), backgroundColor: Colors.red),
     );
   }
 
   void _showSuccessSnackBar(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: Colors.green,
-      ),
+      SnackBar(content: Text(message), backgroundColor: Colors.green),
     );
   }
 
@@ -689,27 +707,24 @@ class _AddBusScreenState extends State<AddBusScreen> {
                   children: [
                     // Bus basic info
                     _buildBusInfoSection(),
-                    
+
                     const SizedBox(height: 24),
-                    
+
                     // Route selection
                     _buildRouteSelectionSection(),
-                    
+
                     const SizedBox(height: 16),
-                    
+
                     // Custom route stops list
                     if (!_useExistingRoute) _buildCustomStopsSection(),
                   ],
                 ),
               ),
             ),
-            
+
             // Map section
-            Expanded(
-              flex: 3,
-              child: _buildMapSection(),
-            ),
-            
+            Expanded(flex: 3, child: _buildMapSection()),
+
             // Create bus button
             _buildCreateButton(),
           ],
@@ -727,9 +742,9 @@ class _AddBusScreenState extends State<AddBusScreen> {
           children: [
             Text(
               'Bus Information',
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
+              style: Theme.of(
+                context,
+              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 16),
             TextFormField(
@@ -781,12 +796,12 @@ class _AddBusScreenState extends State<AddBusScreen> {
           children: [
             Text(
               'Route Selection',
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
+              style: Theme.of(
+                context,
+              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 16),
-            
+
             // Route type selection
             Row(
               children: [
@@ -810,11 +825,14 @@ class _AddBusScreenState extends State<AddBusScreen> {
                 ),
               ],
             ),
-            
+
             const SizedBox(height: 16),
-            
+
             // Route selection/creation
-            if (_useExistingRoute) _buildExistingRouteSelection() else _buildCustomRouteCreation(),
+            if (_useExistingRoute)
+              _buildExistingRouteSelection()
+            else
+              _buildCustomRouteCreation(),
           ],
         ),
       ),
@@ -845,10 +863,15 @@ class _AddBusScreenState extends State<AddBusScreen> {
         labelText: 'Select Route',
         prefixIcon: Icon(Icons.route),
       ),
-      items: _availableRoutes.map((route) => DropdownMenuItem<model.Route>(
-        value: route,
-        child: Text('${route.name} (${route.stops.length} stops)'),
-      )).toList(),
+      items:
+          _availableRoutes
+              .map(
+                (route) => DropdownMenuItem<model.Route>(
+                  value: route,
+                  child: Text('${route.name} (${route.stops.length} stops)'),
+                ),
+              )
+              .toList(),
       onChanged: _onExistingRouteSelected,
       validator: (value) {
         if (_useExistingRoute && value == null) {
@@ -894,10 +917,7 @@ class _AddBusScreenState extends State<AddBusScreen> {
                 const Spacer(),
                 Text(
                   'Tap on map to add stops',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey[600],
-                  ),
+                  style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                 ),
               ],
             ),
@@ -909,13 +929,18 @@ class _AddBusScreenState extends State<AddBusScreen> {
                 final stop = _customStops[index];
                 return ListTile(
                   leading: CircleAvatar(
-                    backgroundColor: index == 0 ? Colors.green : 
-                                   index == _customStops.length - 1 ? Colors.red : 
-                                   Colors.blue,
+                    backgroundColor:
+                        index == 0
+                            ? Colors.green
+                            : index == _customStops.length - 1
+                            ? Colors.red
+                            : Colors.blue,
                     child: Text('${index + 1}'),
                   ),
                   title: Text(stop.name),
-                  subtitle: Text('${stop.latitude.toStringAsFixed(4)}, ${stop.longitude.toStringAsFixed(4)}'),
+                  subtitle: Text(
+                    '${stop.latitude.toStringAsFixed(4)}, ${stop.longitude.toStringAsFixed(4)}',
+                  ),
                   trailing: IconButton(
                     icon: const Icon(Icons.delete),
                     onPressed: () => _removeCustomStop(index),
@@ -940,8 +965,10 @@ class _AddBusScreenState extends State<AddBusScreen> {
               width: double.infinity,
               color: Colors.grey[100],
               child: Text(
-                _useExistingRoute 
-                    ? (_selectedRoute != null ? 'Route: ${_selectedRoute!.name}' : 'Select a route to preview')
+                _useExistingRoute
+                    ? (_selectedRoute != null
+                        ? 'Route: ${_selectedRoute!.name}'
+                        : 'Select a route to preview')
                     : 'Tap on map to add stops',
                 style: const TextStyle(
                   fontSize: 14,
@@ -959,13 +986,13 @@ class _AddBusScreenState extends State<AddBusScreen> {
                 ),
                 children: [
                   TileLayer(
-                    urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                    urlTemplate:
+                        'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
                     userAgentPackageName: 'com.example.arebbus',
                   ),
                   if (_polylines.isNotEmpty)
                     PolylineLayer(polylines: _polylines),
-                  if (_markers.isNotEmpty)
-                    MarkerLayer(markers: _markers),
+                  if (_markers.isNotEmpty) MarkerLayer(markers: _markers),
                 ],
               ),
             ),
@@ -984,23 +1011,24 @@ class _AddBusScreenState extends State<AddBusScreen> {
         style: ElevatedButton.styleFrom(
           padding: const EdgeInsets.symmetric(vertical: 16),
         ),
-        child: _isCreatingBus 
-            ? const Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  ),
-                  SizedBox(width: 8),
-                  Text('Creating Bus...'),
-                ],
-              )
-            : const Text(
-                'Create Bus',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-              ),
+        child:
+            _isCreatingBus
+                ? const Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    ),
+                    SizedBox(width: 8),
+                    Text('Creating Bus...'),
+                  ],
+                )
+                : const Text(
+                  'Create Bus',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                ),
       ),
     );
   }

@@ -1,32 +1,5 @@
 import 'package:arebbus/service/api_service.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:dio/dio.dart';
-
-// Utility class for API configuration
-class ApiConfig {
-  static Dio initializeDio() {
-    const String baseUrl = String.fromEnvironment(
-      "BASE_URL",
-      defaultValue: "http://localhost:6996",
-    );
-
-    final dio = Dio(
-      BaseOptions(
-        baseUrl: baseUrl,
-        connectTimeout: const Duration(seconds: 5),
-        receiveTimeout: const Duration(seconds: 3),
-        headers: {'Content-Type': 'application/json'},
-        extra: kIsWeb ? {'withCredentials': true} : null,
-      ),
-    );
-
-    debugPrint(
-      'Dio initialized for ${kIsWeb ? 'web' : 'mobile/desktop'} platform',
-    );
-    return dio;
-  }
-}
 
 // Utility class for form validation
 class FormValidator {

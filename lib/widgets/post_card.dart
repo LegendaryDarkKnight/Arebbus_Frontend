@@ -3,7 +3,6 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:intl/intl.dart';
 import 'package:arebbus/models/comment.dart';
 import 'package:arebbus/models/post.dart';
-import 'package:arebbus/models/user.dart';
 import 'package:arebbus/service/api_service.dart';
 import 'package:arebbus/widgets/comment_card.dart';
 
@@ -88,17 +87,14 @@ class PostCardUtils {
         content: item['content'] as String? ?? '',
         numUpvote: item['numUpvote'] as int? ?? 0,
         postId: item['postId'] as int,
-        timestamp:
+        authorName: item['authorName'] as String,
+        createdAt:
             item['createdAt'] != null
                 ? DateTime.parse(item['createdAt'] as String)
                 : DateTime.now(),
-        author:
-            item['authorName'] != null
-                ? User(
-                  name: item['authorName'] as String,
-                  image: 'https://picsum.photos/seed/picsum/200/300',
-                )
-                : null,
+        upvoted: item['upvoted'],
+        authorImage:
+            item['authorImage'] ?? 'https://picsum.photos/seed/picsum/200/300',
       );
     }).toList();
   }
@@ -207,7 +203,7 @@ class _PostCardState extends State<PostCard> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final timeAgo = PostCardUtils.formatTimestamp(widget.post.timestamp);
+    final timeAgo = PostCardUtils.formatTimestamp(widget.post.createdAt);
     final primaryTagName = _getPrimaryTagName();
     final tagAppearance = PostCardUtils.getTagAppearance(primaryTagName, theme);
 
@@ -265,16 +261,18 @@ class _PostCardState extends State<PostCard> {
     return CircleAvatar(
       radius: PostCardConstants.avatarRadius,
       backgroundImage:
-          widget.post.author?.image != null &&
-                  widget.post.author!.image.isNotEmpty
-              ? NetworkImage(widget.post.author!.image)
+          widget.post.authorImage != null && widget.post.authorImage!.isNotEmpty
+              ? NetworkImage(
+                widget.post.authorImage ??
+                    'https://picsum.photos/seed/picsum/200/300',
+              )
               : null,
       backgroundColor: theme.colorScheme.surfaceContainerHighest,
       child:
-          widget.post.author?.image == null || widget.post.author!.image.isEmpty
+          widget.post.authorImage == null || widget.post.authorImage!.isEmpty
               ? Text(
-                widget.post.author?.name.isNotEmpty == true
-                    ? widget.post.author!.name[0].toUpperCase()
+                widget.post.authorName.isNotEmpty == true
+                    ? widget.post.authorName[0].toUpperCase()
                     : 'U',
                 style: TextStyle(
                   color: theme.colorScheme.onSurfaceVariant,
@@ -290,7 +288,7 @@ class _PostCardState extends State<PostCard> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          widget.post.author?.name ?? 'Unknown User',
+          widget.post.authorName,
           style: theme.textTheme.titleMedium?.copyWith(
             fontWeight: FontWeight.w600,
             color: theme.colorScheme.onSurface,
@@ -398,7 +396,7 @@ class _PostCardState extends State<PostCard> {
         _buildInteractionButton(
           theme: theme,
           icon:
-              (widget.post.upvoted ?? false)
+              (widget.post.upvoted)
                   ? FontAwesomeIcons.solidThumbsUp
                   : FontAwesomeIcons.thumbsUp,
           label: '${widget.post.numUpvote}',

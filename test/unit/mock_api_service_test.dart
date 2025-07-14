@@ -1,9 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:arebbus/models/bus.dart';
-import 'package:arebbus/models/bus_response.dart';
 import 'package:arebbus/models/route.dart';
-import 'package:arebbus/models/route_response.dart';
-import 'package:arebbus/models/stop.dart';
 import '../mocks/mock_api_service.dart';
 
 void main() {
