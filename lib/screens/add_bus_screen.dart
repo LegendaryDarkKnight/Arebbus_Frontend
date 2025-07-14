@@ -44,11 +44,10 @@ class _AddBusScreenState extends State<AddBusScreen> {
 
   // UI state
   bool _isCreatingBus = false;
-  late AuthResponse _authResponse;
+
   @override
-  Future<void> initState() async {
+  void initState() {
     super.initState();
-    _authResponse = (await _apiService.getUserData())!;
     _loadAvailableRoutes();
   }
 
@@ -564,17 +563,18 @@ class _AddBusScreenState extends State<AddBusScreen> {
     );
   }
 
-  void _addCustomStop() {
+  Future<void> _addCustomStop() async {
     if (_stopNameController.text.trim().isEmpty ||
         _pendingStopLocation == null) {
       return;
     }
 
+    AuthResponse authResponse = (await _apiService.getUserData())!;
     final stop = Stop(
       name: _stopNameController.text.trim(),
       latitude: _pendingStopLocation!.latitude,
       longitude: _pendingStopLocation!.longitude,
-      authorName: _authResponse.username, // Will be set by the server
+      authorName: authResponse.username, // Will be set by the server
     );
 
     setState(() {
