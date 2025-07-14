@@ -53,8 +53,8 @@ class _BusListScreenState extends State<BusListScreen> {
     
     try {
       final BusResponse response = widget.showInstalledOnly 
-          ? await _apiService.getInstalledBuses(page: 0, size: 10)
-          : await _apiService.getAllBuses(page: 0, size: 10);
+          ? await _apiService.getInstalledBuses(page: 0, size: 3)
+          : await _apiService.getAllBuses(page: 0, size: 3);
       
       setState(() {
         _buses = response.buses;
@@ -79,8 +79,8 @@ class _BusListScreenState extends State<BusListScreen> {
     
     try {
       final BusResponse response = widget.showInstalledOnly 
-          ? await _apiService.getInstalledBuses(page: _currentPage + 1, size: 10)
-          : await _apiService.getAllBuses(page: _currentPage + 1, size: 10);
+          ? await _apiService.getInstalledBuses(page: _currentPage + 1, size: 2)
+          : await _apiService.getAllBuses(page: _currentPage + 1, size: 2);
       
       setState(() {
         _buses.addAll(response.buses);
@@ -263,54 +263,88 @@ class _BusListScreenState extends State<BusListScreen> {
       ),
     );
   }
-  
-  Widget _buildBusCard(Bus bus) {
-    return Card(
-      margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
-      child: ListTile(
-        leading: CircleAvatar(
-          backgroundColor: bus.installed ? Colors.green : Colors.grey[300],
-          child: Icon(
-            Icons.directions_bus,
-            color: bus.installed ? Colors.white : Colors.grey[600],
+Widget _buildBusCard(Bus bus) {
+  return Card(
+    margin: const EdgeInsets.symmetric(vertical: 16, horizontal: 16), // Increased from 4,8 to 16,16
+    elevation: 4, // Added elevation for better visual separation
+    child: InkWell(
+      onTap: () => _navigateToBusDetail(bus),
+      child: Container(
+        height: MediaQuery.of(context).size.height * 0.25, // Takes 25% of screen height
+        padding: const EdgeInsets.all(16),
+        child: Row(
+        children: [
+          CircleAvatar(
+            radius: 30, // Increased size
+            backgroundColor: bus.installed ? Colors.green : Colors.grey[300],
+            child: Icon(
+              Icons.directions_bus,
+              color: bus.installed ? Colors.white : Colors.grey[600],
+              size: 30,
+            ),
           ),
-        ),
-        title: Text(
-          bus.name,
-          style: const TextStyle(fontWeight: FontWeight.bold),
-        ),
-        subtitle: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('By ${bus.authorName}'),
-            Text('Route: ${bus.route?.name ?? 'Unknown'}'),
-            const SizedBox(height: 4),
-            Row(
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Icon(Icons.people, size: 16, color: Colors.grey[600]),
-                const SizedBox(width: 4),
-                Text('${bus.capacity} seats'),
-                const SizedBox(width: 16),
-                Icon(Icons.download, size: 16, color: Colors.grey[600]),
-                const SizedBox(width: 4),
-                Text('${bus.numInstall} installs'),
-                const SizedBox(width: 16),
-                Icon(Icons.thumb_up, size: 16, color: Colors.grey[600]),
-                const SizedBox(width: 4),
-                Text('${bus.numUpvote} upvotes'),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      bus.name,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 18,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'By ${bus.authorName}',
+                      style: TextStyle(
+                        color: Colors.grey[600],
+                        fontSize: 14,
+                      ),
+                    ),
+                    Text(
+                      'Route: ${bus.route?.name ?? 'Unknown'}',
+                      style: TextStyle(
+                        color: Colors.grey[600],
+                        fontSize: 14,
+                      ),
+                    ),
+                  ],
+                ),
+                Row(
+                  children: [
+                    Icon(Icons.people, size: 16, color: Colors.grey[600]),
+                    const SizedBox(width: 4),
+                    Text('${bus.capacity} seats'),
+                    const SizedBox(width: 16),
+                    Icon(Icons.download, size: 16, color: Colors.grey[600]),
+                    const SizedBox(width: 4),
+                    Text('${bus.numInstall} installs'),
+                    const SizedBox(width: 16),
+                    Icon(Icons.thumb_up, size: 16, color: Colors.grey[600]),
+                    const SizedBox(width: 4),
+                    Text('${bus.numUpvote} upvotes'),
+                  ],
+                ),
               ],
             ),
-          ],
-        ),
-        trailing: IconButton(
-          icon: Icon(
-            bus.installed ? Icons.delete : Icons.download,
-            color: bus.installed ? Colors.red : Colors.green,
           ),
-          onPressed: () => _toggleInstallation(bus),
-        ),
-        onTap: () => _navigateToBusDetail(bus),
+          IconButton(
+            icon: Icon(
+              bus.installed ? Icons.delete : Icons.download,
+              color: bus.installed ? Colors.red : Colors.green,
+              size: 28,
+            ),
+            onPressed: () => _toggleInstallation(bus),
+          ),
+        ],
       ),
-    );
-  }
+    ),
+  ));
+}
 }
