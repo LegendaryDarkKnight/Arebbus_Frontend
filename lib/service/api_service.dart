@@ -3,6 +3,11 @@ import 'package:arebbus/models/auth_response.dart' show AuthResponse;
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart' show debugPrint, kDebugMode, kIsWeb;
 import 'package:arebbus/models/comment.dart';
+import 'package:arebbus/models/bus.dart';
+import 'package:arebbus/models/bus_response.dart';
+import 'package:arebbus/models/route_response.dart';
+import 'package:arebbus/models/stop.dart';
+import 'package:arebbus/models/route.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 
@@ -55,9 +60,9 @@ class ApiService {
   void _initializeDio() {
     _dio = Dio();
     _dio.options.baseUrl = _baseUrl;
-    _dio.options.connectTimeout = const Duration(seconds: 10);
-    _dio.options.receiveTimeout = const Duration(seconds: 10);
-    _dio.options.sendTimeout = const Duration(seconds: 10);
+    _dio.options.connectTimeout = const Duration(seconds: 30);
+    _dio.options.receiveTimeout = const Duration(seconds: 60);
+    _dio.options.sendTimeout = const Duration(seconds: 60);
 
     _dio.options.headers = {
       'Content-Type': 'application/json',
@@ -335,8 +340,8 @@ class ApiService {
             'Accept': 'application/json',
           },
           extra: kIsWeb ? {'withCredentials': true} : null,
-          sendTimeout: const Duration(seconds: 10),
-          receiveTimeout: const Duration(seconds: 10),
+          sendTimeout: const Duration(seconds: 60),
+          receiveTimeout: const Duration(seconds: 60),
         ),
       );
 
@@ -494,8 +499,8 @@ class ApiService {
             'Accept': 'application/json',
           },
           extra: kIsWeb ? {'withCredentials': true} : null,
-          sendTimeout: const Duration(seconds: 10),
-          receiveTimeout: const Duration(seconds: 10),
+          sendTimeout: const Duration(seconds: 60),
+          receiveTimeout: const Duration(seconds: 60),
         ),
       );
 
@@ -566,8 +571,8 @@ class ApiService {
             'Accept': 'application/json',
           },
           extra: kIsWeb ? {'withCredentials': true} : null,
-          sendTimeout: const Duration(seconds: 10),
-          receiveTimeout: const Duration(seconds: 10),
+          sendTimeout: const Duration(seconds: 60),
+          receiveTimeout: const Duration(seconds: 60),
         ),
       );
 
@@ -664,6 +669,326 @@ class ApiService {
         debugPrint('$key: $value');
       }
       debugPrint('======================');
+    }
+  }
+
+  // Bus API methods
+  Future<BusResponse> getAllBuses({int page = 0, int size = 10}) async {
+    try {
+      final response = await _dio.get(
+        '/bus/all',
+        queryParameters: {'page': page, 'size': size},
+      );
+      
+      if (response.statusCode == 200) {
+        return BusResponse.fromJson(response.data as Map<String, dynamic>);
+      } else {
+        throw DioException(
+          requestOptions: response.requestOptions,
+          response: response,
+          error: 'Failed to load buses: Status code ${response.statusCode}',
+        );
+      }
+    } on DioException catch (e) {
+      debugPrint('Error fetching buses: $e');
+      throw Exception('Failed to load buses: ${e.message}');
+    }
+  }
+
+  Future<BusResponse> getInstalledBuses({int page = 0, int size = 10}) async {
+    try {
+      final response = await _dio.get(
+        '/bus/installed',
+        queryParameters: {'page': page, 'size': size},
+      );
+      
+      if (response.statusCode == 200) {
+        return BusResponse.fromJson(response.data as Map<String, dynamic>);
+      } else {
+        throw DioException(
+          requestOptions: response.requestOptions,
+          response: response,
+          error: 'Failed to load installed buses: Status code ${response.statusCode}',
+        );
+      }
+    } on DioException catch (e) {
+      debugPrint('Error fetching installed buses: $e');
+      throw Exception('Failed to load installed buses: ${e.message}');
+    }
+  }
+
+  Future<Bus> getBusById(int busId) async {
+    try {
+      final response = await _dio.get(
+        '/bus',
+        queryParameters: {'busId': busId},
+      );
+      
+      if (response.statusCode == 200) {
+        return Bus.fromJson(response.data as Map<String, dynamic>);
+      } else if (response.statusCode == 404) {
+        throw Exception('Bus not found');
+      } else {
+        throw DioException(
+          requestOptions: response.requestOptions,
+          response: response,
+          error: 'Failed to load bus: Status code ${response.statusCode}',
+        );
+      }
+    } on DioException catch (e) {
+      debugPrint('Error fetching bus by ID $busId: $e');
+      if (e.response?.statusCode == 404) {
+        throw Exception('Bus not found');
+      }
+      throw Exception('Failed to load bus: ${e.message}');
+    }
+  }
+
+  Future<Map<String, dynamic>> installBus(int busId) async {
+    try {
+      final response = await _dio.post(
+        '/bus/install',
+        data: {'busId': busId},
+      );
+      
+      if (response.statusCode == 200) {
+        return response.data as Map<String, dynamic>;
+      } else {
+        throw DioException(
+          requestOptions: response.requestOptions,
+          response: response,
+          error: 'Failed to install bus: Status code ${response.statusCode}',
+        );
+      }
+    } on DioException catch (e) {
+      debugPrint('Error installing bus $busId: $e');
+      throw Exception('Failed to install bus: ${e.message}');
+    }
+  }
+
+  Future<Map<String, dynamic>> uninstallBus(int busId) async {
+    try {
+      final response = await _dio.post(
+        '/bus/uninstall',
+        data: {'busId': busId},
+      );
+      
+      if (response.statusCode == 200) {
+        return response.data as Map<String, dynamic>;
+      } else {
+        throw DioException(
+          requestOptions: response.requestOptions,
+          response: response,
+          error: 'Failed to uninstall bus: Status code ${response.statusCode}',
+        );
+      }
+    } on DioException catch (e) {
+      debugPrint('Error uninstalling bus $busId: $e');
+      throw Exception('Failed to uninstall bus: ${e.message}');
+    }
+  }
+
+  Future<Stop> getStopById(int stopId) async {
+    try {
+      final response = await _dio.get(
+        '/stop',
+        queryParameters: {'stopId': stopId},
+      );
+      
+      if (response.statusCode == 200) {
+        return Stop.fromJson(response.data as Map<String, dynamic>);
+      } else if (response.statusCode == 404) {
+        throw Exception('Stop not found');
+      } else {
+        throw DioException(
+          requestOptions: response.requestOptions,
+          response: response,
+          error: 'Failed to load stop: Status code ${response.statusCode}',
+        );
+      }
+    } on DioException catch (e) {
+      debugPrint('Error fetching stop by ID $stopId: $e');
+      if (e.response?.statusCode == 404) {
+        throw Exception('Stop not found');
+      }
+      throw Exception('Failed to load stop: ${e.message}');
+    }
+  }
+
+  Future<Route> getRouteById(int routeId) async {
+    try {
+      final response = await _dio.get(
+        '/route',
+        queryParameters: {'routeId': routeId},
+      );
+      
+      if (response.statusCode == 200) {
+        return Route.fromJson(response.data as Map<String, dynamic>);
+      } else if (response.statusCode == 404) {
+        throw Exception('Route not found');
+      } else {
+        throw DioException(
+          requestOptions: response.requestOptions,
+          response: response,
+          error: 'Failed to load route: Status code ${response.statusCode}',
+        );
+      }
+    } on DioException catch (e) {
+      debugPrint('Error fetching route by ID $routeId: $e');
+      if (e.response?.statusCode == 404) {
+        throw Exception('Route not found');
+      }
+      throw Exception('Failed to load route: ${e.message}');
+    }
+  }
+
+  // Route and Stop creation methods
+  Future<RouteResponse> getAllRoutes({int page = 0, int size = 10}) async {
+    try {
+      final response = await _dio.get(
+        '/route/all',
+        queryParameters: {'page': page, 'size': size},
+      );
+      
+      if (response.statusCode == 200) {
+        return RouteResponse.fromJson(response.data as Map<String, dynamic>);
+      } else {
+        throw DioException(
+          requestOptions: response.requestOptions,
+          response: response,
+          error: 'Failed to load routes: Status code ${response.statusCode}',
+        );
+      }
+    } on DioException catch (e) {
+      debugPrint('Error fetching routes: $e');
+      throw Exception('Failed to load routes: ${e.message}');
+    }
+  }
+
+  Future<Stop> createStop({
+    required String name,
+    required double latitude,
+    required double longitude,
+  }) async {
+    try {
+      final response = await _dio.post(
+        '/stop/create',
+        data: {
+          'name': name,
+          'latitude': latitude,
+          'longitude': longitude,
+        },
+      );
+      
+      if (response.statusCode == 200) {
+        return Stop.fromJson(response.data as Map<String, dynamic>);
+      } else {
+        throw DioException(
+          requestOptions: response.requestOptions,
+          response: response,
+          error: 'Failed to create stop: Status code ${response.statusCode}',
+        );
+      }
+    } on DioException catch (e) {
+      debugPrint('Error creating stop: $e');
+      throw Exception('Failed to create stop: ${e.message}');
+    }
+  }
+
+  Future<Route> createRoute({
+    required String name,
+    required List<int> stopIds,
+  }) async {
+    try {
+      final response = await _dio.post(
+        '/route/create',
+        data: {
+          'name': name,
+          'stopIds': stopIds,
+        },
+      );
+      
+      if (response.statusCode == 200) {
+        return Route.fromJson(response.data as Map<String, dynamic>);
+      } else {
+        throw DioException(
+          requestOptions: response.requestOptions,
+          response: response,
+          error: 'Failed to create route: Status code ${response.statusCode}',
+        );
+      }
+    } on DioException catch (e) {
+      debugPrint('Error creating route: $e');
+      if (e.response?.statusCode == 404) {
+        throw Exception('One or more stops not found');
+      }
+      throw Exception('Failed to create route: ${e.message}');
+    }
+  }
+
+  Future<Bus> createBus({
+    required String name,
+    required int routeId,
+    required int capacity,
+  }) async {
+    try {
+      final response = await _dio.post(
+        '/bus/create',
+        data: {
+          'name': name,
+          'routeId': routeId,
+          'capacity': capacity,
+        },
+      );
+      
+      if (response.statusCode == 200) {
+        return Bus.fromJson(response.data as Map<String, dynamic>);
+      } else {
+        throw DioException(
+          requestOptions: response.requestOptions,
+          response: response,
+          error: 'Failed to create bus: Status code ${response.statusCode}',
+        );
+      }
+    } on DioException catch (e) {
+      debugPrint('Error creating bus: $e');
+      if (e.response?.statusCode == 404) {
+        throw Exception('Route not found');
+      }
+      throw Exception('Failed to create bus: ${e.message}');
+    }
+  }
+
+  Future<List<Stop>> getNearbyStops({
+    required double latitude,
+    required double longitude,
+    double radius = 3.0, // Default 3km radius
+  }) async {
+    try {
+      final response = await _dio.get(
+        '/stop/near',
+        queryParameters: {
+          'latitude': latitude,
+          'longitude': longitude,
+          'radius': radius,
+        },
+      );
+      
+      if (response.statusCode == 200) {
+        final List<dynamic> stopsData = response.data as List<dynamic>;
+        return stopsData
+            .map((stopJson) => Stop.fromJson(stopJson as Map<String, dynamic>))
+            .toList();
+      } else {
+        throw DioException(
+          requestOptions: response.requestOptions,
+          response: response,
+          error: 'Failed to load nearby stops: Status code ${response.statusCode}',
+        );
+      }
+    } on DioException catch (e) {
+      debugPrint('Error fetching nearby stops: $e');
+      throw Exception('Failed to load nearby stops: ${e.message}');
     }
   }
 }

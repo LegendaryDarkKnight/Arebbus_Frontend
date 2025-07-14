@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:arebbus/screens/login_screen.dart';
 import 'package:arebbus/screens/register_screen.dart';
 import 'package:arebbus/screens/home_screen.dart';
+import 'package:arebbus/screens/bus_list_screen.dart';
 import 'package:arebbus/config/app_config.dart';
 import 'package:provider/provider.dart' show ChangeNotifierProvider, Consumer;
 
@@ -22,6 +23,9 @@ class AppRoutes {
   static const String login = '/login';
   static const String register = '/register';
   static const String home = '/home';
+  static const String allBuses = '/buses';
+  static const String installedBuses = '/installed-buses';
+  static const String busDetail = '/bus-detail';
 }
 
 /// The main application widget
@@ -39,6 +43,8 @@ class ArebbusApp extends StatelessWidget {
         AppRoutes.login: (context) => const LoginScreen(),
         AppRoutes.register: (context) => const RegisterScreen(),
         AppRoutes.home: (context) => const HomeScreen(),
+        AppRoutes.allBuses: (context) => const BusListScreen(),
+        AppRoutes.installedBuses: (context) => const BusListScreen(showInstalledOnly: true),
       },
     );
   }
@@ -115,7 +121,7 @@ class AppTheme {
       ),
 
       // Card Theme
-      cardTheme: CardTheme(
+      cardTheme: CardThemeData(
         elevation: 3,
         shadowColor: Colors.grey[300],
         margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),

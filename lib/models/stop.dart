@@ -6,6 +6,7 @@ class Stop {
   final double latitude;
   final double longitude;
   final int authorId;
+  final String? authorName;
   final User? author;
 
   Stop({
@@ -14,6 +15,7 @@ class Stop {
     required this.latitude,
     required this.longitude,
     required this.authorId,
+    this.authorName,
     this.author,
   });
 
@@ -23,7 +25,8 @@ class Stop {
       name: json['name'] ?? '',
       latitude: (json['latitude'] ?? 0.0).toDouble(),
       longitude: (json['longitude'] ?? 0.0).toDouble(),
-      authorId: json['author_id'] ?? json['authorId'],
+      authorId: json['authorId'] ?? json['author_id'] ?? 0,
+      authorName: json['authorName'],
       author: json['author'] != null ? User.fromJson(json['author']) : null,
     );
   }
@@ -35,6 +38,7 @@ class Stop {
       'latitude': latitude,
       'longitude': longitude,
       'author_id': authorId,
+      'authorName': authorName,
       'author': author?.toJson(),
     };
   }
@@ -45,6 +49,7 @@ class Stop {
     double? latitude,
     double? longitude,
     int? authorId,
+    String? authorName,
     User? author,
   }) {
     return Stop(
@@ -53,6 +58,7 @@ class Stop {
       latitude: latitude ?? this.latitude,
       longitude: longitude ?? this.longitude,
       authorId: authorId ?? this.authorId,
+      authorName: authorName ?? this.authorName,
       author: author ?? this.author,
     );
   }

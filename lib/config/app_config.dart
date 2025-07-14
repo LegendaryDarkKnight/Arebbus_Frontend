@@ -46,7 +46,7 @@ class AppConfig {
   static Future<void> initializeFromEnv() async {
     const apiBaseUrl = String.fromEnvironment(
       "API_BASE_URL",
-      defaultValue: "http://localhost:6996",
+      defaultValue: "http://10.0.2.2:6996",
     );
     // const apiKey = String.fromEnvironment("apiKey", defaultValue: "dev-api-key");
     // const authDomain = String.fromEnvironment("AUTH_DOMAIN", defaultValue: "localhost-auth");
