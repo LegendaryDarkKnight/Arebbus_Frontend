@@ -20,10 +20,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
   static const List<Widget> _widgetOptions = <Widget>[
     FeedScreen(),
-    BusListScreen(showBottomNav: false),
-    MapScreen(),
-    AddonScreen(),
-    ProfileScreen(),
+    BusListScreen(showBottomNav: false, showInstalledOnly: false),
+    BusListScreen(showBottomNav: false, showInstalledOnly: true),
   ];
 
   @override
@@ -59,13 +57,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       case 0:
         return 'Community Feed';
       case 1:
-        return 'Available Buses';
+        return 'All Buses';
       case 2:
-        return 'Live Map';
-      case 3:
-        return 'Addons';
-      case 4:
-        return 'My Profile';
+        return 'Installed Buses';
       default:
         return 'Arebbus';
     }
@@ -78,11 +72,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       case 1:
         return Icons.directions_bus;
       case 2:
-        return Icons.map;
-      case 3:
-        return Icons.extension;
-      case 4:
-        return Icons.person;
+        return Icons.download_done;
       default:
         return Icons.home;
     }
@@ -96,10 +86,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         return Colors.green;
       case 2:
         return Colors.orange;
-      case 3:
-        return Colors.purple;
-      case 4:
-        return Colors.teal;
       default:
         return Colors.blue;
     }
@@ -160,11 +146,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             icon: const Icon(Icons.logout),
             onPressed: _isLoading ? null : _logout,
           ),
-          if (_selectedIndex == 3)
-            IconButton(
-              icon: const Icon(Icons.info_outline),
-              onPressed: () => _showDependencyInfo(context),
-            ),
         ],
       ),
       body: FadeTransition(
@@ -197,22 +178,12 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             BottomNavigationBarItem(
               icon: Icon(Icons.directions_bus_outlined),
               activeIcon: Icon(Icons.directions_bus),
-              label: 'Buses',
+              label: 'All Buses',
             ),
             BottomNavigationBarItem(
-              icon: Icon(Icons.map_outlined),
-              activeIcon: Icon(Icons.map),
-              label: 'Map',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.extension_outlined),
-              activeIcon: Icon(Icons.extension),
-              label: 'Addons',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.person_outline),
-              activeIcon: Icon(Icons.person),
-              label: 'Profile',
+              icon: Icon(Icons.download_outlined),
+              activeIcon: Icon(Icons.download_done),
+              label: 'Installed',
             ),
           ],
           currentIndex: _selectedIndex,
@@ -228,42 +199,4 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     );
   }
 
-  void _showDependencyInfo(BuildContext context) {
-    showDialog(
-      context: context,
-      builder:
-          (context) => AlertDialog(
-            title: const Text('How Add-ons Work'),
-            content: const SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Add-ons have dependencies:',
-                    style: TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  SizedBox(height: 12),
-                  Text('🚏 Stops: Base locations for buses'),
-                  SizedBox(height: 8),
-                  Text('🛣️ Routes: Connect multiple stops'),
-                  SizedBox(height: 8),
-                  Text('🚌 Bus Services: Operate on routes'),
-                  SizedBox(height: 16),
-                  Text(
-                    'You must create them in order: Stop → Route → Bus',
-                    style: TextStyle(fontStyle: FontStyle.italic),
-                  ),
-                ],
-              ),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text('Got it'),
-              ),
-            ],
-          ),
-    );
-  }
 }

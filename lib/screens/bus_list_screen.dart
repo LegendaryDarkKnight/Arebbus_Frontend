@@ -8,9 +8,13 @@ import 'package:arebbus/screens/add_bus_screen.dart';
 class BusListScreen extends StatefulWidget {
   final bool showInstalledOnly;
   final bool showBottomNav;
-  
-  const BusListScreen({super.key, this.showInstalledOnly = false, this.showBottomNav = true});
-  
+
+  const BusListScreen({
+    super.key,
+    this.showInstalledOnly = false,
+    this.showBottomNav = true,
+  });
+
   @override
   State<BusListScreen> createState() => _BusListScreenState();
 }
@@ -18,45 +22,47 @@ class BusListScreen extends StatefulWidget {
 class _BusListScreenState extends State<BusListScreen> {
   final ApiService _apiService = ApiService.instance;
   final ScrollController _scrollController = ScrollController();
-  
+
   List<Bus> _buses = [];
   int _currentPage = 0;
   bool _isLoading = false;
   bool _hasMore = true;
   String? _errorMessage;
-  
+
   @override
   void initState() {
     super.initState();
     _loadBuses();
     _scrollController.addListener(_onScroll);
   }
-  
+
   @override
   void dispose() {
     _scrollController.dispose();
     super.dispose();
   }
-  
+
   void _onScroll() {
-    if (_scrollController.position.pixels == _scrollController.position.maxScrollExtent) {
+    if (_scrollController.position.pixels ==
+        _scrollController.position.maxScrollExtent) {
       _loadMoreBuses();
     }
   }
-  
+
   Future<void> _loadBuses() async {
     if (_isLoading) return;
-    
+
     setState(() {
       _isLoading = true;
       _errorMessage = null;
     });
-    
+
     try {
-      final BusResponse response = widget.showInstalledOnly 
-          ? await _apiService.getInstalledBuses(page: 0, size: 3)
-          : await _apiService.getAllBuses(page: 0, size: 3);
-      
+      final BusResponse response =
+          widget.showInstalledOnly
+              ? await _apiService.getInstalledBuses(page: 0, size: 3)
+              : await _apiService.getAllBuses(page: 0, size: 3);
+
       setState(() {
         _buses = response.buses;
         _currentPage = response.page;
@@ -70,19 +76,23 @@ class _BusListScreenState extends State<BusListScreen> {
       });
     }
   }
-  
+
   Future<void> _loadMoreBuses() async {
     if (_isLoading || !_hasMore) return;
-    
+
     setState(() {
       _isLoading = true;
     });
-    
+
     try {
-      final BusResponse response = widget.showInstalledOnly 
-          ? await _apiService.getInstalledBuses(page: _currentPage + 1, size: 2)
-          : await _apiService.getAllBuses(page: _currentPage + 1, size: 2);
-      
+      final BusResponse response =
+          widget.showInstalledOnly
+              ? await _apiService.getInstalledBuses(
+                page: _currentPage + 1,
+                size: 2,
+              )
+              : await _apiService.getAllBuses(page: _currentPage + 1, size: 2);
+
       setState(() {
         _buses.addAll(response.buses);
         _currentPage = response.page;
@@ -96,7 +106,7 @@ class _BusListScreenState extends State<BusListScreen> {
       _showErrorSnackBar(e.toString());
     }
   }
-  
+
   Future<void> _toggleInstallation(Bus bus) async {
     try {
       if (bus.installed) {
@@ -106,93 +116,67 @@ class _BusListScreenState extends State<BusListScreen> {
         await _apiService.installBus(bus.id!);
         _showSuccessSnackBar('${bus.name} installed successfully');
       }
-      
+
       // Refresh the list
       await _loadBuses();
     } catch (e) {
       _showErrorSnackBar(e.toString());
     }
   }
-  
+
   void _showErrorSnackBar(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: Colors.red,
-      ),
+      SnackBar(content: Text(message), backgroundColor: Colors.red),
     );
   }
-  
+
   void _showSuccessSnackBar(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: Colors.green,
-      ),
+      SnackBar(content: Text(message), backgroundColor: Colors.green),
     );
   }
-  
+
   void _navigateToBusDetail(Bus bus) {
     Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (context) => BusDetailScreen(bus: bus),
-      ),
+      MaterialPageRoute(builder: (context) => BusDetailScreen(bus: bus)),
     );
   }
-  
+
   void _navigateToAddBus() async {
     final result = await Navigator.push<bool>(
       context,
-      MaterialPageRoute(
-        builder: (context) => const AddBusScreen(),
-      ),
+      MaterialPageRoute(builder: (context) => const AddBusScreen()),
     );
-    
+
     // Refresh the list if a bus was created
     if (result == true) {
       _loadBuses();
     }
   }
-  
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.showInstalledOnly ? 'Installed Buses' : 'All Buses'),
-        actions: [
-          IconButton(
-            icon: Icon(widget.showInstalledOnly ? Icons.public : Icons.download_done),
-            onPressed: () {
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => BusListScreen(showInstalledOnly: !widget.showInstalledOnly),
-                ),
-              );
-            },
-          ),
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: _loadBuses,
-          ),
-        ],
-      ),
       body: _buildBody(),
-      floatingActionButton: widget.showInstalledOnly ? null : FloatingActionButton(
-        onPressed: _navigateToAddBus,
-        tooltip: 'Add New Bus',
-        child: const Icon(Icons.add),
-      ),
-      bottomNavigationBar: widget.showBottomNav ? _buildBottomNavigationBar() : null,
+      floatingActionButton:
+          widget.showInstalledOnly
+              ? null
+              : FloatingActionButton(
+                onPressed: _navigateToAddBus,
+                tooltip: 'Add New Bus',
+                child: const Icon(Icons.add),
+              ),
+      bottomNavigationBar:
+          widget.showBottomNav ? _buildBottomNavigationBar() : null,
     );
   }
-  
+
   Widget _buildBody() {
     if (_isLoading && _buses.isEmpty) {
       return const Center(child: CircularProgressIndicator());
     }
-    
+
     if (_errorMessage != null && _buses.isEmpty) {
       return Center(
         child: Column(
@@ -211,15 +195,12 @@ class _BusListScreenState extends State<BusListScreen> {
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: _loadBuses,
-              child: const Text('Retry'),
-            ),
+            ElevatedButton(onPressed: _loadBuses, child: const Text('Retry')),
           ],
         ),
       );
     }
-    
+
     if (_buses.isEmpty) {
       return Center(
         child: Column(
@@ -228,12 +209,14 @@ class _BusListScreenState extends State<BusListScreen> {
             Icon(Icons.directions_bus, size: 64, color: Colors.grey[400]),
             const SizedBox(height: 16),
             Text(
-              widget.showInstalledOnly ? 'No installed buses' : 'No buses available',
+              widget.showInstalledOnly
+                  ? 'No installed buses'
+                  : 'No buses available',
               style: Theme.of(context).textTheme.headlineSmall,
             ),
             const SizedBox(height: 8),
             Text(
-              widget.showInstalledOnly 
+              widget.showInstalledOnly
                   ? 'Install some buses to see them here'
                   : 'Check back later for available buses',
               style: Theme.of(context).textTheme.bodyMedium,
@@ -242,7 +225,7 @@ class _BusListScreenState extends State<BusListScreen> {
         ),
       );
     }
-    
+
     return RefreshIndicator(
       onRefresh: _loadBuses,
       child: ListView.builder(
@@ -258,97 +241,105 @@ class _BusListScreenState extends State<BusListScreen> {
               ),
             );
           }
-          
+
           final bus = _buses[index];
           return _buildBusCard(bus);
         },
       ),
     );
   }
-Widget _buildBusCard(Bus bus) {
-  return Card(
-    margin: const EdgeInsets.symmetric(vertical: 16, horizontal: 16), // Increased from 4,8 to 16,16
-    elevation: 4, // Added elevation for better visual separation
-    child: InkWell(
-      onTap: () => _navigateToBusDetail(bus),
-      child: Container(
-        height: MediaQuery.of(context).size.height * 0.25, // Takes 25% of screen height
-        padding: const EdgeInsets.all(16),
-        child: Row(
-        children: [
-          CircleAvatar(
-            radius: 30, // Increased size
-            backgroundColor: bus.installed ? Colors.green : Colors.grey[300],
-            child: Icon(
-              Icons.directions_bus,
-              color: bus.installed ? Colors.white : Colors.grey[600],
-              size: 30,
-            ),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Column(
+
+  Widget _buildBusCard(Bus bus) {
+    return Card(
+      margin: const EdgeInsets.symmetric(
+        vertical: 16,
+        horizontal: 16,
+      ), // Increased from 4,8 to 16,16
+      elevation: 4, // Added elevation for better visual separation
+      child: InkWell(
+        onTap: () => _navigateToBusDetail(bus),
+        child: Container(
+          height:
+              MediaQuery.of(context).size.height *
+              0.25, // Takes 25% of screen height
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            children: [
+              CircleAvatar(
+                radius: 30, // Increased size
+                backgroundColor:
+                    bus.installed ? Colors.green : Colors.grey[300],
+                child: Icon(
+                  Icons.directions_bus,
+                  color: bus.installed ? Colors.white : Colors.grey[600],
+                  size: 30,
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(
-                      bus.name,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 18,
-                      ),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          bus.name,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 18,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'By ${bus.authorName}',
+                          style: TextStyle(
+                            color: Colors.grey[600],
+                            fontSize: 14,
+                          ),
+                        ),
+                        Text(
+                          'Route: ${bus.route?.name ?? 'Unknown'}',
+                          style: TextStyle(
+                            color: Colors.grey[600],
+                            fontSize: 14,
+                          ),
+                        ),
+                      ],
                     ),
-                    const SizedBox(height: 4),
-                    Text(
-                      'By ${bus.authorName}',
-                      style: TextStyle(
-                        color: Colors.grey[600],
-                        fontSize: 14,
-                      ),
-                    ),
-                    Text(
-                      'Route: ${bus.route?.name ?? 'Unknown'}',
-                      style: TextStyle(
-                        color: Colors.grey[600],
-                        fontSize: 14,
-                      ),
+                    Row(
+                      children: [
+                        Icon(Icons.people, size: 16, color: Colors.grey[600]),
+                        const SizedBox(width: 4),
+                        Text('${bus.capacity} seats'),
+                        const SizedBox(width: 16),
+                        Icon(Icons.download, size: 16, color: Colors.grey[600]),
+                        const SizedBox(width: 4),
+                        Text('${bus.numInstall} installs'),
+                        const SizedBox(width: 16),
+                        Icon(Icons.thumb_up, size: 16, color: Colors.grey[600]),
+                        const SizedBox(width: 4),
+                        Text('${bus.numUpvote} upvotes'),
+                      ],
                     ),
                   ],
                 ),
-                Row(
-                  children: [
-                    Icon(Icons.people, size: 16, color: Colors.grey[600]),
-                    const SizedBox(width: 4),
-                    Text('${bus.capacity} seats'),
-                    const SizedBox(width: 16),
-                    Icon(Icons.download, size: 16, color: Colors.grey[600]),
-                    const SizedBox(width: 4),
-                    Text('${bus.numInstall} installs'),
-                    const SizedBox(width: 16),
-                    Icon(Icons.thumb_up, size: 16, color: Colors.grey[600]),
-                    const SizedBox(width: 4),
-                    Text('${bus.numUpvote} upvotes'),
-                  ],
+              ),
+              IconButton(
+                icon: Icon(
+                  bus.installed ? Icons.delete : Icons.download,
+                  color: bus.installed ? Colors.red : Colors.green,
+                  size: 28,
                 ),
-              ],
-            ),
+                onPressed: () => _toggleInstallation(bus),
+              ),
+            ],
           ),
-          IconButton(
-            icon: Icon(
-              bus.installed ? Icons.delete : Icons.download,
-              color: bus.installed ? Colors.red : Colors.green,
-              size: 28,
-            ),
-            onPressed: () => _toggleInstallation(bus),
-          ),
-        ],
+        ),
       ),
-    ),
-  ));
-}
+    );
+  }
 
   Widget _buildBottomNavigationBar() {
     return Container(
@@ -363,28 +354,47 @@ Widget _buildBusCard(Bus bus) {
       ),
       child: BottomNavigationBar(
         type: BottomNavigationBarType.fixed,
-        selectedItemColor: Colors.green,
+        selectedItemColor:
+            widget.showInstalledOnly ? Colors.orange : Colors.green,
         unselectedItemColor: Colors.grey[600],
         selectedLabelStyle: const TextStyle(fontWeight: FontWeight.w600),
         elevation: 0,
         backgroundColor: Colors.white,
-        currentIndex: 1, // Buses tab
+        currentIndex: widget.showInstalledOnly ? 2 : 1, // Current tab index
         onTap: (index) {
           switch (index) {
             case 0:
               Navigator.pushReplacementNamed(context, '/home');
               break;
             case 1:
-              // Already on buses page
+              if (widget.showInstalledOnly) {
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(
+                    builder:
+                        (context) => const BusListScreen(
+                          showBottomNav: true,
+                          showInstalledOnly: false,
+                        ),
+                  ),
+                );
+              }
+              // Already on all buses page if showInstalledOnly is false
               break;
             case 2:
-              Navigator.pushReplacementNamed(context, '/home');
-              break;
-            case 3:
-              Navigator.pushReplacementNamed(context, '/home');
-              break;
-            case 4:
-              Navigator.pushReplacementNamed(context, '/home');
+              if (!widget.showInstalledOnly) {
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(
+                    builder:
+                        (context) => const BusListScreen(
+                          showBottomNav: true,
+                          showInstalledOnly: true,
+                        ),
+                  ),
+                );
+              }
+              // Already on installed buses page if showInstalledOnly is true
               break;
           }
         },
@@ -397,22 +407,12 @@ Widget _buildBusCard(Bus bus) {
           BottomNavigationBarItem(
             icon: Icon(Icons.directions_bus_outlined),
             activeIcon: Icon(Icons.directions_bus),
-            label: 'Buses',
+            label: 'All Buses',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.map_outlined),
-            activeIcon: Icon(Icons.map),
-            label: 'Map',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.extension_outlined),
-            activeIcon: Icon(Icons.extension),
-            label: 'Addons',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person_outline),
-            activeIcon: Icon(Icons.person),
-            label: 'Profile',
+            icon: Icon(Icons.download_outlined),
+            activeIcon: Icon(Icons.download_done),
+            label: 'Installed',
           ),
         ],
       ),
