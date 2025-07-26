@@ -48,6 +48,13 @@
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>This app needs location access to show your current location on the map.</string>
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
-	<string>This app needs location access to show your current location on the map.</string>
+	<string>This app needs continuous location access to update your position while waiting for or riding the bus, even when the app is in the background.</string>
+	<key>NSLocationAlwaysUsageDescription</key>
+	<string>This app needs continuous location access to update your position while waiting for or riding the bus, even when the app is in the background.</string>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>location</string>
+		<string>background-processing</string>
+	</array>
 </dict>
 </plist>

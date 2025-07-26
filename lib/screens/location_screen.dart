@@ -6,6 +6,9 @@ import 'package:geolocator/geolocator.dart';
 import 'package:arebbus/service/api_service.dart';
 import 'package:arebbus/models/user_location.dart';
 import 'package:arebbus/models/bus_location.dart';
+import 'package:arebbus/models/waiting_users_count.dart';
+import 'package:arebbus/services/location_tracking_service.dart';
+import 'dart:async';
 
 class LocationScreen extends StatefulWidget {
   const LocationScreen({super.key});
@@ -17,19 +20,30 @@ class LocationScreen extends StatefulWidget {
 class _LocationScreenState extends State<LocationScreen> {
   final MapController _mapController = MapController();
   final ApiService _apiService = ApiService.instance;
+  final LocationTrackingService _trackingService = LocationTrackingService.instance;
   
   LatLng? _currentLocation;
   UserLocation? _userLocationStatus;
   BusLocationResponse? _busLocations;
+  WaitingUsersCount? _waitingUsersCount;
   bool _isLoading = true;
   String? _errorMessage;
   List<Marker> _markers = [];
   bool _mapReady = false;
+  Timer? _waitingCountTimer;
 
   @override
   void initState() {
     super.initState();
     _initializeLocation();
+  }
+
+  @override
+  void dispose() {
+    // Don't stop location tracking service - let it continue in background
+    // But stop the waiting count timer
+    _waitingCountTimer?.cancel();
+    super.dispose();
   }
 
   Future<void> _initializeLocation() async {
@@ -50,12 +64,20 @@ class _LocationScreenState extends State<LocationScreen> {
       // Get current GPS location
       await _getCurrentGPSLocation();
       
-      // If user is waiting for a bus, get bus locations
+      // If user is waiting for a bus, get bus locations and waiting count
       if (_userLocationStatus != null && _userLocationStatus!.isWaiting) {
         await _getBusLocations();
+        await _getWaitingUsersCount();
+        _startWaitingCountTimer();
+      } else {
+        _stopWaitingCountTimer();
       }
 
       _updateMarkers();
+      
+      // Start or update tracking service based on user status
+      _updateTrackingService();
+      
       setState(() {
         _isLoading = false;
       });
@@ -111,6 +133,39 @@ class _LocationScreenState extends State<LocationScreen> {
         debugPrint('Failed to get bus locations: $e');
       }
     }
+  }
+
+  Future<void> _getWaitingUsersCount() async {
+    if (_userLocationStatus?.isWaiting == true) {
+      try {
+        _waitingUsersCount = await _apiService.getWaitingUsersCount();
+      } catch (e) {
+        debugPrint('Failed to get waiting users count: $e');
+        _waitingUsersCount = null;
+      }
+    }
+  }
+
+  void _startWaitingCountTimer() {
+    _stopWaitingCountTimer(); // Stop any existing timer
+    
+    // Update waiting count every 30 seconds
+    _waitingCountTimer = Timer.periodic(const Duration(seconds: 30), (timer) async {
+      if (_userLocationStatus?.isWaiting == true) {
+        await _getWaitingUsersCount();
+        if (mounted) {
+          setState(() {}); // Refresh UI with new count
+        }
+      } else {
+        _stopWaitingCountTimer();
+      }
+    });
+  }
+
+  void _stopWaitingCountTimer() {
+    _waitingCountTimer?.cancel();
+    _waitingCountTimer = null;
+    _waitingUsersCount = null;
   }
 
   void _updateMarkers() {
@@ -196,10 +251,13 @@ class _LocationScreenState extends State<LocationScreen> {
     try {
       setState(() => _isLoading = true);
       
-      await _apiService.setUserOnBus(
+      UserLocation updatedStatus = await _apiService.setUserOnBus(
         latitude: _currentLocation!.latitude,
         longitude: _currentLocation!.longitude,
       );
+      
+      // Update tracking service with new status
+      _trackingService.updateCachedUserStatus(updatedStatus);
       
       // Refresh the page
       await _initializeLocation();
@@ -217,10 +275,13 @@ class _LocationScreenState extends State<LocationScreen> {
     try {
       setState(() => _isLoading = true);
       
-      await _apiService.setUserNoTrack(
+      UserLocation updatedStatus = await _apiService.setUserNoTrack(
         latitude: _currentLocation!.latitude,
         longitude: _currentLocation!.longitude,
       );
+      
+      // Update tracking service with new status (this will stop tracking)
+      _trackingService.updateCachedUserStatus(updatedStatus);
       
       // Refresh the page
       await _initializeLocation();
@@ -229,6 +290,12 @@ class _LocationScreenState extends State<LocationScreen> {
         _errorMessage = 'Failed to stop tracking: ${e.toString()}';
         _isLoading = false;
       });
+    }
+  }
+
+  void _updateTrackingService() {
+    if (_userLocationStatus != null) {
+      _trackingService.updateCachedUserStatus(_userLocationStatus!);
     }
   }
 
@@ -437,6 +504,36 @@ class _LocationScreenState extends State<LocationScreen> {
                         style: TextStyle(
                           color: Colors.grey[600],
                           fontSize: 14,
+                        ),
+                      ),
+                    // Show waiting users count if available
+                    if (_userLocationStatus!.isWaiting && _waitingUsersCount != null)
+                      Container(
+                        margin: const EdgeInsets.only(top: 4),
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: Colors.orange.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: Colors.orange.withOpacity(0.3)),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.people,
+                              size: 16,
+                              color: Colors.orange[700],
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              '${_waitingUsersCount!.waitingCount} people waiting',
+                              style: TextStyle(
+                                color: Colors.orange[700],
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                   ],

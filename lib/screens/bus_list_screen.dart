@@ -5,6 +5,7 @@ import 'package:arebbus/service/api_service.dart';
 import 'package:arebbus/screens/bus_detail_screen.dart';
 import 'package:arebbus/screens/add_bus_screen.dart';
 import 'package:arebbus/screens/home_screen.dart';
+import 'package:arebbus/services/location_tracking_service.dart';
 import 'package:geolocator/geolocator.dart';
 
 class BusListScreen extends StatefulWidget {
@@ -200,11 +201,14 @@ class _BusListScreenState extends State<BusListScreen> {
         );
 
         // Set waiting status
-        await _apiService.setUserWaiting(
+        final userLocation = await _apiService.setUserWaiting(
           latitude: position.latitude,
           longitude: position.longitude,
           busId: bus.id!,
         );
+
+        // Start location tracking service
+        LocationTrackingService.instance.updateCachedUserStatus(userLocation);
 
         // Close loading dialog
         if (mounted) Navigator.pop(context);

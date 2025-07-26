@@ -1,4 +1,5 @@
 import 'package:arebbus/service/auth_provider.dart' show AuthProvider;
+import 'package:arebbus/services/location_tracking_service.dart';
 import 'package:flutter/material.dart';
 import 'package:arebbus/screens/login_screen.dart';
 import 'package:arebbus/screens/register_screen.dart';
@@ -10,6 +11,11 @@ import 'package:provider/provider.dart' show ChangeNotifierProvider, Consumer;
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await AppConfig.initializeFromEnv();
+  
+  // Initialize location tracking service
+  // It will start tracking automatically when user status changes
+  LocationTrackingService.instance;
+  
   runApp(
     ChangeNotifierProvider(
       create: (context) => AuthProvider()..initAuth(),

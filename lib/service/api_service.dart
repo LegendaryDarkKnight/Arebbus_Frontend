@@ -11,6 +11,7 @@ import 'package:arebbus/models/route_response.dart';
 import 'package:arebbus/models/route.dart';
 import 'package:arebbus/models/user_location.dart';
 import 'package:arebbus/models/bus_location.dart';
+import 'package:arebbus/models/waiting_users_count.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 
@@ -1202,6 +1203,61 @@ class ApiService {
     } on DioException catch (e) {
       debugPrint('Error getting bus locations: $e');
       throw Exception('Failed to get bus locations: ${e.message}');
+    }
+  }
+
+  Future<UserLocation> updateUserLocation({
+    required double latitude,
+    required double longitude,
+  }) async {
+    try {
+      final response = await _dio.post(
+        '/location/user/update',
+        data: {
+          'latitude': latitude,
+          'longitude': longitude,
+        },
+        options: Options(
+          headers: {'Content-Type': 'application/json'},
+        ),
+      );
+      
+      if (response.statusCode == 200) {
+        return UserLocation.fromJson(response.data);
+      } else {
+        throw DioException(
+          requestOptions: response.requestOptions,
+          response: response,
+          error: 'Failed to update user location: Status code ${response.statusCode}',
+        );
+      }
+    } on DioException catch (e) {
+      debugPrint('Error updating user location: $e');
+      throw Exception('Failed to update user location: ${e.message}');
+    }
+  }
+
+  Future<WaitingUsersCount> getWaitingUsersCount() async {
+    try {
+      final response = await _dio.get(
+        '/location/users/wait-count',
+        options: Options(
+          headers: {'Content-Type': 'application/json'},
+        ),
+      );
+      
+      if (response.statusCode == 200) {
+        return WaitingUsersCount.fromJson(response.data);
+      } else {
+        throw DioException(
+          requestOptions: response.requestOptions,
+          response: response,
+          error: 'Failed to get waiting users count: Status code ${response.statusCode}',
+        );
+      }
+    } on DioException catch (e) {
+      debugPrint('Error getting waiting users count: $e');
+      throw Exception('Failed to get waiting users count: ${e.message}');
     }
   }
 }
