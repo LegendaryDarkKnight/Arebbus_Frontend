@@ -4,6 +4,8 @@ import 'package:arebbus/models/bus_response.dart';
 import 'package:arebbus/service/api_service.dart';
 import 'package:arebbus/screens/bus_detail_screen.dart';
 import 'package:arebbus/screens/add_bus_screen.dart';
+import 'package:arebbus/screens/home_screen.dart';
+import 'package:geolocator/geolocator.dart';
 
 class BusListScreen extends StatefulWidget {
   final bool showInstalledOnly;
@@ -152,6 +154,77 @@ class _BusListScreenState extends State<BusListScreen> {
     // Refresh the list if a bus was created
     if (result == true) {
       _loadBuses();
+    }
+  }
+
+  Future<void> _waitForBus(Bus bus) async {
+    try {
+      // Check if location services are enabled
+      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) {
+        _showErrorSnackBar('Please enable location services to wait for a bus.');
+        return;
+      }
+
+      // Check location permissions
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+        if (permission == LocationPermission.denied) {
+          _showErrorSnackBar('Location permission is required to wait for a bus.');
+          return;
+        }
+      }
+
+      if (permission == LocationPermission.deniedForever) {
+        _showErrorSnackBar('Please enable location permission in app settings.');
+        return;
+      }
+
+      // Show loading indicator
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+
+      try {
+        // Get current position
+        Position position = await Geolocator.getCurrentPosition(
+          locationSettings: const LocationSettings(
+            accuracy: LocationAccuracy.high,
+            distanceFilter: 10,
+          ),
+        );
+
+        // Set waiting status
+        await _apiService.setUserWaiting(
+          latitude: position.latitude,
+          longitude: position.longitude,
+          busId: bus.id!,
+        );
+
+        // Close loading dialog
+        if (mounted) Navigator.pop(context);
+
+        // Navigate to home screen with location tab selected
+        if (mounted) {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const HomeScreen(initialTabIndex: 3), // Location tab
+            ),
+          );
+        }
+      } catch (e) {
+        // Close loading dialog
+        if (mounted) Navigator.pop(context);
+        _showErrorSnackBar('Failed to set waiting status: ${e.toString()}');
+      }
+    } catch (e) {
+      _showErrorSnackBar('Failed to get location: ${e.toString()}');
     }
   }
 
@@ -326,13 +399,36 @@ class _BusListScreenState extends State<BusListScreen> {
                   ],
                 ),
               ),
-              IconButton(
-                icon: Icon(
-                  bus.installed ? Icons.delete : Icons.download,
-                  color: bus.installed ? Colors.red : Colors.green,
-                  size: 28,
-                ),
-                onPressed: () => _toggleInstallation(bus),
+              Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  IconButton(
+                    icon: Icon(
+                      bus.installed ? Icons.delete : Icons.download,
+                      color: bus.installed ? Colors.red : Colors.green,
+                      size: 28,
+                    ),
+                    onPressed: () => _toggleInstallation(bus),
+                  ),
+                  if (widget.showInstalledOnly && bus.installed)
+                    SizedBox(
+                      width: 60,
+                      height: 30,
+                      child: ElevatedButton(
+                        onPressed: () => _waitForBus(bus),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.blue,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(horizontal: 8),
+                          minimumSize: const Size(60, 30),
+                        ),
+                        child: const Text(
+                          'Wait',
+                          style: TextStyle(fontSize: 12),
+                        ),
+                      ),
+                    ),
+                ],
               ),
             ],
           ),

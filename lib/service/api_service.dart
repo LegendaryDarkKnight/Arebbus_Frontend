@@ -9,6 +9,8 @@ import 'package:arebbus/models/bus.dart';
 import 'package:arebbus/models/bus_response.dart';
 import 'package:arebbus/models/route_response.dart';
 import 'package:arebbus/models/route.dart';
+import 'package:arebbus/models/user_location.dart';
+import 'package:arebbus/models/bus_location.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 
@@ -1055,6 +1057,151 @@ class ApiService {
     } on DioException catch (e) {
       debugPrint('Error fetching nearby stops: $e');
       throw Exception('Failed to load nearby stops: ${e.message}');
+    }
+  }
+
+  // Location tracking methods
+  Future<UserLocation> getUserLocation() async {
+    try {
+      final response = await _dio.get(
+        '/location/user/get',
+        options: Options(
+          headers: {'Content-Type': 'application/json'},
+        ),
+      );
+      
+      if (response.statusCode == 200) {
+        return UserLocation.fromJson(response.data);
+      } else {
+        throw DioException(
+          requestOptions: response.requestOptions,
+          response: response,
+          error: 'Failed to get user location: Status code ${response.statusCode}',
+        );
+      }
+    } on DioException catch (e) {
+      debugPrint('Error getting user location: $e');
+      throw Exception('Failed to get user location: ${e.message}');
+    }
+  }
+
+  Future<UserLocation> setUserWaiting({
+    required double latitude,
+    required double longitude,
+    required int busId,
+  }) async {
+    try {
+      final response = await _dio.post(
+        '/location/user/waiting',
+        data: {
+          'latitude': latitude,
+          'longitude': longitude,
+          'busId': busId,
+        },
+        options: Options(
+          headers: {'Content-Type': 'application/json'},
+        ),
+      );
+      
+      if (response.statusCode == 200) {
+        return UserLocation.fromJson(response.data);
+      } else {
+        throw DioException(
+          requestOptions: response.requestOptions,
+          response: response,
+          error: 'Failed to set waiting status: Status code ${response.statusCode}',
+        );
+      }
+    } on DioException catch (e) {
+      debugPrint('Error setting waiting status: $e');
+      throw Exception('Failed to set waiting status: ${e.message}');
+    }
+  }
+
+  Future<UserLocation> setUserOnBus({
+    required double latitude,
+    required double longitude,
+  }) async {
+    try {
+      final response = await _dio.post(
+        '/location/user/on-bus',
+        data: {
+          'latitude': latitude,
+          'longitude': longitude,
+        },
+        options: Options(
+          headers: {'Content-Type': 'application/json'},
+        ),
+      );
+      
+      if (response.statusCode == 200) {
+        return UserLocation.fromJson(response.data);
+      } else {
+        throw DioException(
+          requestOptions: response.requestOptions,
+          response: response,
+          error: 'Failed to set on-bus status: Status code ${response.statusCode}',
+        );
+      }
+    } on DioException catch (e) {
+      debugPrint('Error setting on-bus status: $e');
+      throw Exception('Failed to set on-bus status: ${e.message}');
+    }
+  }
+
+  Future<UserLocation> setUserNoTrack({
+    required double latitude,
+    required double longitude,
+  }) async {
+    try {
+      final response = await _dio.post(
+        '/location/user/no-track',
+        data: {
+          'latitude': latitude,
+          'longitude': longitude,
+        },
+        options: Options(
+          headers: {'Content-Type': 'application/json'},
+        ),
+      );
+      
+      if (response.statusCode == 200) {
+        return UserLocation.fromJson(response.data);
+      } else {
+        throw DioException(
+          requestOptions: response.requestOptions,
+          response: response,
+          error: 'Failed to set no-track status: Status code ${response.statusCode}',
+        );
+      }
+    } on DioException catch (e) {
+      debugPrint('Error setting no-track status: $e');
+      throw Exception('Failed to set no-track status: ${e.message}');
+    }
+  }
+
+  Future<BusLocationResponse> getBusLocations(int busId) async {
+    try {
+      final response = await _dio.get(
+        '/location/bus/get',
+        queryParameters: {'busId': busId},
+        options: Options(
+          headers: {'Content-Type': 'application/json'},
+        ),
+      );
+      
+      if (response.statusCode == 200) {
+        return BusLocationResponse.fromJson(response.data);
+      } else {
+        throw DioException(
+          requestOptions: response.requestOptions,
+          response: response,
+          error: 'Failed to get bus locations: Status code ${response.statusCode}',
+        );
+      }
+    } on DioException catch (e) {
+      debugPrint('Error getting bus locations: $e');
+      throw Exception('Failed to get bus locations: ${e.message}');
     }
   }
 }

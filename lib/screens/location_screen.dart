@@ -1,7 +1,11 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:arebbus/service/api_service.dart';
+import 'package:arebbus/models/user_location.dart';
+import 'package:arebbus/models/bus_location.dart';
 
 class LocationScreen extends StatefulWidget {
   const LocationScreen({super.key});
@@ -12,8 +16,11 @@ class LocationScreen extends StatefulWidget {
 
 class _LocationScreenState extends State<LocationScreen> {
   final MapController _mapController = MapController();
+  final ApiService _apiService = ApiService.instance;
   
   LatLng? _currentLocation;
+  UserLocation? _userLocationStatus;
+  BusLocationResponse? _busLocations;
   bool _isLoading = true;
   String? _errorMessage;
   List<Marker> _markers = [];
@@ -22,86 +29,207 @@ class _LocationScreenState extends State<LocationScreen> {
   @override
   void initState() {
     super.initState();
-    _getCurrentLocation();
+    _initializeLocation();
   }
 
-  Future<void> _getCurrentLocation() async {
+  Future<void> _initializeLocation() async {
     setState(() {
       _isLoading = true;
       _errorMessage = null;
     });
 
     try {
-      // Check if location services are enabled
-      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
-      if (!serviceEnabled) {
-        setState(() {
-          _errorMessage = 'Location services are disabled. Please enable them in your device settings.';
-          _isLoading = false;
-        });
-        return;
+      // First get user's tracking status
+      try {
+        _userLocationStatus = await _apiService.getUserLocation();
+      } catch (e) {
+        // If user has no location history, we'll get current location and show NO_TRACK state
+        debugPrint('No user location found, will get current GPS location');
       }
 
-      // Check location permissions
-      LocationPermission permission = await Geolocator.checkPermission();
-      if (permission == LocationPermission.denied) {
-        permission = await Geolocator.requestPermission();
-        if (permission == LocationPermission.denied) {
-          setState(() {
-            _errorMessage = 'Location permissions are denied. Please grant location access to use this feature.';
-            _isLoading = false;
-          });
-          return;
-        }
+      // Get current GPS location
+      await _getCurrentGPSLocation();
+      
+      // If user is waiting for a bus, get bus locations
+      if (_userLocationStatus != null && _userLocationStatus!.isWaiting) {
+        await _getBusLocations();
       }
 
-      if (permission == LocationPermission.deniedForever) {
-        setState(() {
-          _errorMessage = 'Location permissions are permanently denied. Please enable them in app settings.';
-          _isLoading = false;
-        });
-        return;
-      }
-
-      // Get current position
-      Position position = await Geolocator.getCurrentPosition(
-        locationSettings: const LocationSettings(
-          accuracy: LocationAccuracy.high,
-          distanceFilter: 10,
-        ),
-      );
-
+      _updateMarkers();
       setState(() {
-        _currentLocation = LatLng(position.latitude, position.longitude);
-        _markers = [
-          Marker(
-            point: _currentLocation!,
-            width: 40,
-            height: 40,
-            child: const Icon(
-              Icons.my_location,
-              color: Colors.blue,
-              size: 40,
-            ),
-          ),
-        ];
         _isLoading = false;
       });
 
-      // Move map to current location only if map is ready
+      // Move map to current location if ready
       if (_mapReady && _currentLocation != null) {
         _moveToCurrentLocation();
       }
     } catch (e) {
       setState(() {
-        _errorMessage = 'Failed to get current location: ${e.toString()}';
+        _errorMessage = e.toString();
         _isLoading = false;
       });
     }
   }
 
+  Future<void> _getCurrentGPSLocation() async {
+    // Check if location services are enabled
+    bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    if (!serviceEnabled) {
+      throw Exception('Location services are disabled. Please enable them in your device settings.');
+    }
+
+    // Check location permissions
+    LocationPermission permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+      if (permission == LocationPermission.denied) {
+        throw Exception('Location permissions are denied. Please grant location access to use this feature.');
+      }
+    }
+
+    if (permission == LocationPermission.deniedForever) {
+      throw Exception('Location permissions are permanently denied. Please enable them in app settings.');
+    }
+
+    // Get current position
+    Position position = await Geolocator.getCurrentPosition(
+      locationSettings: const LocationSettings(
+        accuracy: LocationAccuracy.high,
+        distanceFilter: 10,
+      ),
+    );
+
+    _currentLocation = LatLng(position.latitude, position.longitude);
+  }
+
+  Future<void> _getBusLocations() async {
+    if (_userLocationStatus?.busId != null) {
+      try {
+        _busLocations = await _apiService.getBusLocations(_userLocationStatus!.busId!);
+      } catch (e) {
+        debugPrint('Failed to get bus locations: $e');
+      }
+    }
+  }
+
+  void _updateMarkers() {
+    _markers.clear();
+
+    // Add user location marker
+    if (_currentLocation != null) {
+      _markers.add(
+        Marker(
+          point: _currentLocation!,
+          width: 40,
+          height: 40,
+          child: Icon(
+            Icons.my_location,
+            color: _getUserMarkerColor(),
+            size: 40,
+          ),
+        ),
+      );
+    }
+
+    // Add bus location markers if waiting
+    if (_userLocationStatus?.isWaiting == true && _busLocations != null) {
+      for (int i = 0; i < _busLocations!.locations.length; i++) {
+        final busLocation = _busLocations!.locations[i];
+        _markers.add(
+          Marker(
+            point: LatLng(busLocation.latitude, busLocation.longitude),
+            width: 60,
+            height: 60,
+            child: Container(
+              decoration: BoxDecoration(
+                color: Colors.orange.withOpacity(0.8),
+                borderRadius: BorderRadius.circular(30),
+                border: Border.all(color: Colors.white, width: 2),
+              ),
+              child: Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(
+                      Icons.directions_bus,
+                      color: Colors.white,
+                      size: 20,
+                    ),
+                    Text(
+                      '${busLocation.userCount}',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        );
+      }
+    }
+  }
+
+  Color _getUserMarkerColor() {
+    if (_userLocationStatus == null) return Colors.blue;
+    switch (_userLocationStatus!.status) {
+      case 'WAITING':
+        return Colors.orange;
+      case 'ON_BUS':
+        return Colors.green;
+      default:
+        return Colors.blue;
+    }
+  }
+
   Future<void> _refreshLocation() async {
-    await _getCurrentLocation();
+    await _initializeLocation();
+  }
+
+  Future<void> _setOnBus() async {
+    if (_currentLocation == null) return;
+    
+    try {
+      setState(() => _isLoading = true);
+      
+      await _apiService.setUserOnBus(
+        latitude: _currentLocation!.latitude,
+        longitude: _currentLocation!.longitude,
+      );
+      
+      // Refresh the page
+      await _initializeLocation();
+    } catch (e) {
+      setState(() {
+        _errorMessage = 'Failed to set on-bus status: ${e.toString()}';
+        _isLoading = false;
+      });
+    }
+  }
+
+  Future<void> _stopTracking() async {
+    if (_currentLocation == null) return;
+    
+    try {
+      setState(() => _isLoading = true);
+      
+      await _apiService.setUserNoTrack(
+        latitude: _currentLocation!.latitude,
+        longitude: _currentLocation!.longitude,
+      );
+      
+      // Refresh the page
+      await _initializeLocation();
+    } catch (e) {
+      setState(() {
+        _errorMessage = 'Failed to stop tracking: ${e.toString()}';
+        _isLoading = false;
+      });
+    }
   }
 
   void _openLocationSettings() async {
@@ -132,7 +260,7 @@ class _LocationScreenState extends State<LocationScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Your Location'),
+        title: Text(_getAppBarTitle()),
         backgroundColor: Colors.purple,
         foregroundColor: Colors.white,
         actions: [
@@ -145,6 +273,18 @@ class _LocationScreenState extends State<LocationScreen> {
       ),
       body: _buildBody(),
     );
+  }
+
+  String _getAppBarTitle() {
+    if (_userLocationStatus == null) return 'Your Location';
+    switch (_userLocationStatus!.status) {
+      case 'WAITING':
+        return 'Waiting for ${_userLocationStatus!.busName ?? 'Bus'}';
+      case 'ON_BUS':
+        return 'On ${_userLocationStatus!.busName ?? 'Bus'}';
+      default:
+        return 'Your Location';
+    }
   }
 
   Widget _buildBody() {
@@ -222,57 +362,11 @@ class _LocationScreenState extends State<LocationScreen> {
 
     return Column(
       children: [
-        // Location info card
-        Card(
-          margin: const EdgeInsets.all(16),
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Row(
-              children: [
-                const Icon(
-                  Icons.my_location,
-                  color: Colors.blue,
-                  size: 32,
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'Your Current Location',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'Lat: ${_currentLocation!.latitude.toStringAsFixed(6)}',
-                        style: TextStyle(
-                          color: Colors.grey[600],
-                          fontSize: 14,
-                        ),
-                      ),
-                      Text(
-                        'Lng: ${_currentLocation!.longitude.toStringAsFixed(6)}',
-                        style: TextStyle(
-                          color: Colors.grey[600],
-                          fontSize: 14,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.center_focus_strong),
-                  onPressed: _moveToCurrentLocation,
-                  tooltip: 'Center on Location',
-                ),
-              ],
-            ),
-          ),
-        ),
+        // Status info card
+        _buildStatusCard(),
+        
+        // Action buttons
+        _buildActionButtons(),
         
         // Map
         Expanded(
@@ -302,5 +396,129 @@ class _LocationScreenState extends State<LocationScreen> {
         ),
       ],
     );
+  }
+
+  Widget _buildStatusCard() {
+    return Card(
+      margin: const EdgeInsets.all(16),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          children: [
+            Icon(
+              Icons.my_location,
+              color: _getUserMarkerColor(),
+              size: 32,
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    _getStatusTitle(),
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  if (_userLocationStatus != null) ...[
+                    Text(
+                      'Status: ${_userLocationStatus!.status}',
+                      style: TextStyle(
+                        color: Colors.grey[600],
+                        fontSize: 14,
+                      ),
+                    ),
+                    if (_userLocationStatus!.busName != null)
+                      Text(
+                        'Bus: ${_userLocationStatus!.busName}',
+                        style: TextStyle(
+                          color: Colors.grey[600],
+                          fontSize: 14,
+                        ),
+                      ),
+                  ],
+                  Text(
+                    'Lat: ${_currentLocation!.latitude.toStringAsFixed(6)}',
+                    style: TextStyle(
+                      color: Colors.grey[600],
+                      fontSize: 14,
+                    ),
+                  ),
+                  Text(
+                    'Lng: ${_currentLocation!.longitude.toStringAsFixed(6)}',
+                    style: TextStyle(
+                      color: Colors.grey[600],
+                      fontSize: 14,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            IconButton(
+              icon: const Icon(Icons.center_focus_strong),
+              onPressed: _moveToCurrentLocation,
+              tooltip: 'Center on Location',
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildActionButtons() {
+    if (_userLocationStatus == null || _userLocationStatus!.isNoTrack) {
+      return const SizedBox.shrink(); // No buttons for NO_TRACK state
+    }
+
+    return Card(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          children: [
+            if (_userLocationStatus!.isWaiting) ...[
+              Expanded(
+                child: ElevatedButton.icon(
+                  onPressed: _setOnBus,
+                  icon: const Icon(Icons.directions_bus),
+                  label: const Text('I\'m On Bus'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.green,
+                    foregroundColor: Colors.white,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 16),
+            ],
+            Expanded(
+              child: ElevatedButton.icon(
+                onPressed: _stopTracking,
+                icon: const Icon(Icons.stop),
+                label: const Text('Stop Tracking'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.red,
+                  foregroundColor: Colors.white,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  String _getStatusTitle() {
+    if (_userLocationStatus == null) return 'Your Current Location';
+    switch (_userLocationStatus!.status) {
+      case 'WAITING':
+        return 'Waiting for Bus';
+      case 'ON_BUS':
+        return 'On Bus';
+      default:
+        return 'Your Current Location';
+    }
   }
 }

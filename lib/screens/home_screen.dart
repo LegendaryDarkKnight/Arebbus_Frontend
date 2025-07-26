@@ -8,7 +8,9 @@ import 'package:arebbus/screens/profile_screen.dart';
 import 'package:arebbus/screens/location_screen.dart';
 
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
+  final int? initialTabIndex;
+  
+  const HomeScreen({super.key, this.initialTabIndex});
   @override
   State<HomeScreen> createState() => _HomeScreenState();
 }
@@ -29,6 +31,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   @override
   void initState() {
     super.initState();
+    _selectedIndex = widget.initialTabIndex ?? 0;
     _animationController = AnimationController(
       duration: const Duration(milliseconds: 300),
       vsync: this,
