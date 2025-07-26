@@ -5,6 +5,7 @@ import 'package:arebbus/screens/bus_list_screen.dart';
 import 'package:arebbus/screens/feed_screen.dart';
 import 'package:arebbus/screens/map_screen.dart';
 import 'package:arebbus/screens/profile_screen.dart';
+import 'package:arebbus/screens/location_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -22,6 +23,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     FeedScreen(),
     BusListScreen(showBottomNav: false, showInstalledOnly: false),
     BusListScreen(showBottomNav: false, showInstalledOnly: true),
+    LocationScreen(),
   ];
 
   @override
@@ -60,6 +62,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         return 'All Buses';
       case 2:
         return 'Installed Buses';
+      case 3:
+        return 'Your Location';
       default:
         return 'Arebbus';
     }
@@ -73,6 +77,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         return Icons.directions_bus;
       case 2:
         return Icons.download_done;
+      case 3:
+        return Icons.my_location;
       default:
         return Icons.home;
     }
@@ -86,6 +92,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         return Colors.green;
       case 2:
         return Colors.orange;
+      case 3:
+        return Colors.purple;
       default:
         return Colors.blue;
     }
@@ -184,6 +192,11 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               icon: Icon(Icons.download_outlined),
               activeIcon: Icon(Icons.download_done),
               label: 'Installed',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.location_on_outlined),
+              activeIcon: Icon(Icons.my_location),
+              label: 'Location',
             ),
           ],
           currentIndex: _selectedIndex,

@@ -396,6 +396,9 @@ class _BusListScreenState extends State<BusListScreen> {
               }
               // Already on installed buses page if showInstalledOnly is true
               break;
+            case 3:
+              Navigator.pushReplacementNamed(context, '/home');
+              break;
           }
         },
         items: const [
@@ -413,6 +416,11 @@ class _BusListScreenState extends State<BusListScreen> {
             icon: Icon(Icons.download_outlined),
             activeIcon: Icon(Icons.download_done),
             label: 'Installed',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.location_on_outlined),
+            activeIcon: Icon(Icons.my_location),
+            label: 'Location',
           ),
         ],
       ),

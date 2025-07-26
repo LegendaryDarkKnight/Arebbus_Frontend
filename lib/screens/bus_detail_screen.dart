@@ -410,6 +410,9 @@ class _BusDetailScreenState extends State<BusDetailScreen> {
                 ),
               );
               break;
+            case 3:
+              Navigator.pushReplacementNamed(context, '/home');
+              break;
           }
         },
         items: const [
@@ -427,6 +430,11 @@ class _BusDetailScreenState extends State<BusDetailScreen> {
             icon: Icon(Icons.download_outlined),
             activeIcon: Icon(Icons.download_done),
             label: 'Installed',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.location_on_outlined),
+            activeIcon: Icon(Icons.my_location),
+            label: 'Location',
           ),
         ],
       ),
