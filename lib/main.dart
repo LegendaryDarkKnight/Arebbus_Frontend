@@ -45,8 +45,8 @@ class ArebbusApp extends StatelessWidget {
         AppRoutes.login: (context) => const LoginScreen(),
         AppRoutes.register: (context) => const RegisterScreen(),
         AppRoutes.home: (context) => const HomeScreen(),
-        AppRoutes.allBuses: (context) => const BusListScreen(),
-        AppRoutes.installedBuses: (context) => const BusListScreen(showInstalledOnly: true),
+        AppRoutes.allBuses: (context) => const BusListScreen(showBottomNav: true),
+        AppRoutes.installedBuses: (context) => const BusListScreen(showInstalledOnly: true, showBottomNav: true),
       },
     );
   }

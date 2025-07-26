@@ -20,7 +20,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
   static const List<Widget> _widgetOptions = <Widget>[
     FeedScreen(),
-    BusListScreen(),
+    BusListScreen(showBottomNav: false),
     MapScreen(),
     AddonScreen(),
     ProfileScreen(),
