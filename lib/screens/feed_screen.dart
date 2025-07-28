@@ -26,6 +26,8 @@ class _FeedScreenState extends State<FeedScreen> with TickerProviderStateMixin {
   bool _isLoadingMore = false;
   final ScrollController _scrollController = ScrollController();
   String? _loadError;
+  bool _useBackendFiltering = false;
+  List<String> _selectedTags = [];
 
   @override
   void initState() {
@@ -33,6 +35,7 @@ class _FeedScreenState extends State<FeedScreen> with TickerProviderStateMixin {
     _feedScreenUtils = FeedScreenUtils();
     _searchController.addListener(_onSearchChanged);
     _scrollController.addListener(_scrollListener);
+    _loadAvailableTags();
     _loadPosts(isRefresh: true);
   }
 
@@ -61,14 +64,34 @@ class _FeedScreenState extends State<FeedScreen> with TickerProviderStateMixin {
   }
 
   // Data Loading Methods
+  Future<void> _loadAvailableTags() async {
+    try {
+      final tags = await _feedScreenUtils.loadAllAvailableTags();
+      if (mounted) {
+        setState(() {
+          _availableFilterTags = tags;
+        });
+      }
+    } catch (e) {
+      debugPrint('Error loading available tags: $e');
+    }
+  }
+
   Future<void> _loadPosts({bool isRefresh = false}) async {
     if (!mounted) return;
+
+    // Determine filter tags for backend call
+    List<String>? filterTags;
+    if (_useBackendFiltering && _selectedTags.isNotEmpty) {
+      filterTags = _selectedTags;
+    }
 
     final result = await _feedScreenUtils.loadPosts(
       currentPage: isRefresh ? 0 : _currentPage,
       pageSize: 2,
       isRefresh: isRefresh,
       existingPosts: _posts,
+      filterTags: filterTags,
     );
 
     if (!mounted) return;
@@ -80,8 +103,12 @@ class _FeedScreenState extends State<FeedScreen> with TickerProviderStateMixin {
       _isLoading = result['isLoading'];
       _loadError = result['error'];
 
-      _updateAvailableFilterTags();
-      _applyFiltersAndSort();
+      if (!_useBackendFiltering) {
+        _updateAvailableFilterTags();
+        _applyFiltersAndSort();
+      } else {
+        _filteredPosts = _posts;
+      }
     });
 
     if (result['error'] != null) {
@@ -105,10 +132,17 @@ class _FeedScreenState extends State<FeedScreen> with TickerProviderStateMixin {
       _loadError = null;
     });
 
+    // Determine filter tags for backend call
+    List<String>? filterTags;
+    if (_useBackendFiltering && _selectedTags.isNotEmpty) {
+      filterTags = _selectedTags;
+    }
+
     final result = await _feedScreenUtils.loadMorePosts(
       currentPage: _currentPage,
       pageSize: 2,
       existingPosts: _posts,
+      filterTags: filterTags,
     );
 
     if (!mounted) return;
@@ -121,8 +155,12 @@ class _FeedScreenState extends State<FeedScreen> with TickerProviderStateMixin {
       _isLoadingMore = false;
       _loadError = result['error'];
 
-      _updateAvailableFilterTags();
-      _applyFiltersAndSort();
+      if (!_useBackendFiltering) {
+        _updateAvailableFilterTags();
+        _applyFiltersAndSort();
+      } else {
+        _filteredPosts = _posts;
+      }
     });
 
     if (result['error'] != null) {
@@ -144,6 +182,57 @@ class _FeedScreenState extends State<FeedScreen> with TickerProviderStateMixin {
         searchQuery: _searchController.text,
         sortBy: _sortBy,
       );
+    });
+  }
+
+  void _toggleBackendFiltering() {
+    setState(() {
+      _useBackendFiltering = !_useBackendFiltering;
+      if (_useBackendFiltering) {
+        // Switch to backend filtering
+        if (_selectedTagFilter != 'All') {
+          _selectedTags = [_selectedTagFilter];
+        } else {
+          _selectedTags = [];
+        }
+        _loadPosts(isRefresh: true);
+      } else {
+        // Switch back to frontend filtering
+        _selectedTags = [];
+        _loadPosts(isRefresh: true);
+      }
+    });
+  }
+
+  void _onTagSelectionChanged(String tag, bool selected) {
+    setState(() {
+      if (selected) {
+        if (!_selectedTags.contains(tag)) {
+          _selectedTags.add(tag);
+        }
+      } else {
+        _selectedTags.remove(tag);
+      }
+
+      if (_useBackendFiltering) {
+        _loadPosts(isRefresh: true);
+      } else {
+        _selectedTagFilter = _selectedTags.isEmpty ? 'All' : _selectedTags.first;
+        _applyFiltersAndSort();
+      }
+    });
+  }
+
+  void _clearTagSelection() {
+    setState(() {
+      _selectedTags.clear();
+      _selectedTagFilter = 'All';
+
+      if (_useBackendFiltering) {
+        _loadPosts(isRefresh: true);
+      } else {
+        _applyFiltersAndSort();
+      }
     });
   }
 
@@ -520,11 +609,15 @@ class _FeedScreenState extends State<FeedScreen> with TickerProviderStateMixin {
 
   Widget _buildFilterControls() {
     final theme = Theme.of(context);
-    final hasActiveFilters =
-        _selectedTagFilter != 'All' ||
-        _sortBy != 'Recent' ||
-        _sortBy != 'Default' ||
-        _searchController.text.isNotEmpty;
+    final hasActiveFilters = _useBackendFiltering
+        ? _selectedTags.isNotEmpty ||
+          _sortBy != 'Recent' ||
+          _sortBy != 'Default' ||
+          _searchController.text.isNotEmpty
+        : _selectedTagFilter != 'All' ||
+          _sortBy != 'Recent' ||
+          _sortBy != 'Default' ||
+          _searchController.text.isNotEmpty;
 
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -625,8 +718,6 @@ class _FeedScreenState extends State<FeedScreen> with TickerProviderStateMixin {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildTagFilterHeader(theme),
-              const SizedBox(height: 8),
               _buildTagFilterChips(theme),
               if (hasActiveFilters && !_showAdvancedFilters)
                 _buildFilterSummary(theme),
@@ -637,86 +728,155 @@ class _FeedScreenState extends State<FeedScreen> with TickerProviderStateMixin {
     );
   }
 
-  Widget _buildTagFilterHeader(ThemeData theme) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+
+  Widget _buildTagFilterChips(ThemeData theme) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          'Filter by Tag:',
-          style: theme.textTheme.titleSmall?.copyWith(
-            fontWeight: FontWeight.w500,
-          ),
+        // Backend filtering toggle
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              _useBackendFiltering ? 'Backend Tag Search' : 'Filter by Tag:',
+              style: theme.textTheme.titleSmall?.copyWith(
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            Row(
+              children: [
+                Switch.adaptive(
+                  value: _useBackendFiltering,
+                  onChanged: (value) => _toggleBackendFiltering(),
+                  materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
+                Text(
+                  'API',
+                  style: theme.textTheme.bodySmall,
+                ),
+              ],
+            ),
+          ],
         ),
-        if (_selectedTagFilter != 'All')
-          TextButton.icon(
-            icon: Icon(Icons.clear, size: 16, color: theme.colorScheme.error),
-            label: Text(
-              'Clear Tag',
-              style: TextStyle(fontSize: 12, color: theme.colorScheme.error),
-            ),
-            onPressed:
-                () => setState(() {
-                  _selectedTagFilter = 'All';
-                  _applyFiltersAndSort();
-                }),
-            style: TextButton.styleFrom(
-              padding: EdgeInsets.zero,
-              visualDensity: VisualDensity.compact,
-            ),
-          ),
+        const SizedBox(height: 8),
+        // Tag chips
+        SizedBox(
+          height: _useBackendFiltering ? 76 : 38,
+          child: _useBackendFiltering 
+              ? _buildMultiSelectTagChips(theme)
+              : _buildSingleSelectTagChips(theme),
+        ),
       ],
     );
   }
 
-  Widget _buildTagFilterChips(ThemeData theme) {
-    return SizedBox(
-      height: 38,
-      child: ListView(
-        scrollDirection: Axis.horizontal,
-        children:
-            _availableFilterTags.map((tag) {
-              final isSelected = _selectedTagFilter == tag;
+  Widget _buildSingleSelectTagChips(ThemeData theme) {
+    return ListView(
+      scrollDirection: Axis.horizontal,
+      children: _availableFilterTags.map((tag) {
+        final isSelected = _selectedTagFilter == tag;
+        return Padding(
+          padding: const EdgeInsets.only(right: 8.0),
+          child: FilterChip(
+            label: Text(tag, style: const TextStyle(fontSize: 12)),
+            selected: isSelected,
+            onSelected: (bool sel) => setState(() {
+              _selectedTagFilter = sel ? tag : 'All';
+              _applyFiltersAndSort();
+            }),
+            selectedColor: theme.colorScheme.primaryContainer,
+            checkmarkColor: theme.colorScheme.onPrimaryContainer,
+            labelStyle: TextStyle(
+              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+              fontSize: 12,
+              color: isSelected
+                  ? theme.colorScheme.onPrimaryContainer
+                  : theme.textTheme.bodySmall?.color,
+            ),
+            backgroundColor: theme.colorScheme.surfaceContainerHighest.withAlpha(76),
+            shape: StadiumBorder(
+              side: BorderSide(
+                color: isSelected
+                    ? theme.colorScheme.primary.withAlpha(178)
+                    : Colors.grey.shade400,
+                width: 0.8,
+              ),
+            ),
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+            visualDensity: VisualDensity.compact,
+          ),
+        );
+      }).toList(),
+    );
+  }
+
+  Widget _buildMultiSelectTagChips(ThemeData theme) {
+    return Column(
+      children: [
+        SizedBox(
+          height: 38,
+          child: ListView(
+            scrollDirection: Axis.horizontal,
+            children: _availableFilterTags.where((tag) => tag != 'All').map((tag) {
+              final isSelected = _selectedTags.contains(tag);
               return Padding(
                 padding: const EdgeInsets.only(right: 8.0),
                 child: FilterChip(
                   label: Text(tag, style: const TextStyle(fontSize: 12)),
                   selected: isSelected,
-                  onSelected:
-                      (bool sel) => setState(() {
-                        _selectedTagFilter = sel ? tag : 'All';
-                        _applyFiltersAndSort();
-                      }),
+                  onSelected: (bool sel) => _onTagSelectionChanged(tag, sel),
                   selectedColor: theme.colorScheme.primaryContainer,
                   checkmarkColor: theme.colorScheme.onPrimaryContainer,
                   labelStyle: TextStyle(
-                    fontWeight:
-                        isSelected ? FontWeight.bold : FontWeight.normal,
+                    fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
                     fontSize: 12,
-                    color:
-                        isSelected
-                            ? theme.colorScheme.onPrimaryContainer
-                            : theme.textTheme.bodySmall?.color,
+                    color: isSelected
+                        ? theme.colorScheme.onPrimaryContainer
+                        : theme.textTheme.bodySmall?.color,
                   ),
-                  backgroundColor: theme.colorScheme.surfaceContainerHighest
-                      .withAlpha(76),
+                  backgroundColor: theme.colorScheme.surfaceContainerHighest.withAlpha(76),
                   shape: StadiumBorder(
                     side: BorderSide(
-                      color:
-                          isSelected
-                              ? theme.colorScheme.primary.withAlpha(178)
-                              : Colors.grey.shade400,
+                      color: isSelected
+                          ? theme.colorScheme.primary.withAlpha(178)
+                          : Colors.grey.shade400,
                       width: 0.8,
                     ),
                   ),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 2,
-                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                   visualDensity: VisualDensity.compact,
                 ),
               );
             }).toList(),
-      ),
+          ),
+        ),
+        if (_selectedTags.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.only(top: 4.0),
+            child: Row(
+              children: [
+                Text(
+                  'Selected: ${_selectedTags.join(", ")}',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.primary,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const Spacer(),
+                TextButton(
+                  onPressed: _clearTagSelection,
+                  child: Text(
+                    'Clear',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: theme.colorScheme.error,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+      ],
     );
   }
 
@@ -902,11 +1062,15 @@ class _FeedScreenState extends State<FeedScreen> with TickerProviderStateMixin {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final hasActiveFilters =
-        _selectedTagFilter != 'All' ||
-        _sortBy != 'Recent' ||
-        _sortBy != 'Default' ||
-        _searchController.text.isNotEmpty;
+    final hasActiveFilters = _useBackendFiltering
+        ? _selectedTags.isNotEmpty ||
+          _sortBy != 'Recent' ||
+          _sortBy != 'Default' ||
+          _searchController.text.isNotEmpty
+        : _selectedTagFilter != 'All' ||
+          _sortBy != 'Recent' ||
+          _sortBy != 'Default' ||
+          _searchController.text.isNotEmpty;
 
     return Scaffold(
       body: SafeArea(

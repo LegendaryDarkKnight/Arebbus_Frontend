@@ -113,16 +113,26 @@ class FeedScreenUtils {
     required int pageSize,
     required bool isRefresh,
     required List<Post> existingPosts,
+    List<String>? filterTags,
   }) async {
     try {
       // For refresh, always start from page 0
       final requestPage = isRefresh ? 0 : currentPage;
 
       debugPrint(
-        "Loading posts - Page: $requestPage, PageSize: $pageSize, IsRefresh: $isRefresh",
+        "Loading posts - Page: $requestPage, PageSize: $pageSize, IsRefresh: $isRefresh, FilterTags: $filterTags",
       );
 
-      final data = await ApiService.instance.fetchPosts(requestPage, pageSize);
+      Map<String, dynamic> data;
+      if (filterTags != null && filterTags.isNotEmpty) {
+        data = await ApiService.instance.fetchPostsByTags(
+          filterTags,
+          requestPage,
+          pageSize,
+        );
+      } else {
+        data = await ApiService.instance.fetchPosts(requestPage, pageSize);
+      }
 
       // debugPrint("API Response: $data");
 
@@ -171,16 +181,26 @@ class FeedScreenUtils {
     required int currentPage,
     required int pageSize,
     required List<Post> existingPosts,
+    List<String>? filterTags,
   }) async {
     try {
       // Request the next page
       final nextPage = currentPage + 1;
 
       debugPrint(
-        "Loading more posts - NextPage: $nextPage, PageSize: $pageSize",
+        "Loading more posts - NextPage: $nextPage, PageSize: $pageSize, FilterTags: $filterTags",
       );
 
-      final data = await ApiService.instance.fetchPosts(nextPage, pageSize);
+      Map<String, dynamic> data;
+      if (filterTags != null && filterTags.isNotEmpty) {
+        data = await ApiService.instance.fetchPostsByTags(
+          filterTags,
+          nextPage,
+          pageSize,
+        );
+      } else {
+        data = await ApiService.instance.fetchPosts(nextPage, pageSize);
+      }
 
       debugPrint("Load more API Response: $data");
 
@@ -254,6 +274,33 @@ class FeedScreenUtils {
     });
 
     return sortedTags;
+  }
+
+  Future<List<String>> loadAllAvailableTags() async {
+    try {
+      final backendTags = await ApiService.instance.fetchAllTags();
+      final defaultTags = getDefaultTags();
+      
+      // Combine backend tags with default tags, ensuring "All" is first
+      final allTags = <String>{
+        'All',
+        ...defaultTags,
+        ...backendTags.where((tag) => !defaultTags.contains(tag) && tag != 'All'),
+      };
+
+      final sortedTags = allTags.toList();
+      sortedTags.sort((a, b) {
+        if (a == "All") return -1;
+        if (b == "All") return 1;
+        return a.compareTo(b);
+      });
+
+      return sortedTags;
+    } catch (e) {
+      debugPrint("Error loading tags from backend: $e");
+      // Fallback to default tags if backend fails
+      return ['All', ...getDefaultTags()];
+    }
   }
 
   List<Post> applyFiltersAndSort({

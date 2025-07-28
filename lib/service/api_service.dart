@@ -325,6 +325,106 @@ class ApiService {
     }
   }
 
+  Future<Map<String, dynamic>> fetchPostsByTags(
+    List<String> tags,
+    int page,
+    int size,
+  ) async {
+    try {
+      final response = await _dio.get(
+        '/post/by-tags',
+        queryParameters: {
+          'tags': tags.join(','),
+          'page': page,
+          'size': size,
+        },
+        options: Options(responseType: ResponseType.json),
+      );
+
+      if (response.statusCode == 200) {
+        if (response.data is Map<String, dynamic>) {
+          return response.data as Map<String, dynamic>;
+        } else {
+          throw Exception(
+            'API returned unexpected data type: ${response.data.runtimeType}',
+          );
+        }
+      } else {
+        throw DioException(
+          requestOptions: response.requestOptions,
+          response: response,
+          error:
+              'API request failed with status ${response.statusCode}: ${response.data}',
+        );
+      }
+    } on DioException catch (e) {
+      debugPrint('DioException in fetchPostsByTags: ${e.message}');
+      debugPrint('DioException response data: ${e.response?.data}');
+      if (e.response?.data is String &&
+          (e.response!.data as String).isNotEmpty) {
+        throw Exception('Failed to load posts by tags: ${e.response!.data}');
+      } else if (e.response?.data is Map &&
+          e.response!.data['message'] != null) {
+        throw Exception(
+          'Failed to load posts by tags: ${e.response!.data['message']}',
+        );
+      }
+      throw Exception(
+        'Failed to load posts by tags (Network error): ${e.message}',
+      );
+    } catch (e) {
+      debugPrint('Generic error in fetchPostsByTags: $e');
+      throw Exception(
+        'An unexpected error occurred while fetching posts by tags: ${e.toString()}',
+      );
+    }
+  }
+
+  Future<List<String>> fetchAllTags() async {
+    try {
+      final response = await _dio.get(
+        '/post/tags',
+        options: Options(responseType: ResponseType.json),
+      );
+
+      if (response.statusCode == 200) {
+        if (response.data is List) {
+          return (response.data as List).cast<String>();
+        } else if (response.data is Map &&
+            response.data['tags'] is List) {
+          return (response.data['tags'] as List).cast<String>();
+        } else {
+          throw Exception(
+            'API returned unexpected data type: ${response.data.runtimeType}',
+          );
+        }
+      } else {
+        throw DioException(
+          requestOptions: response.requestOptions,
+          response: response,
+          error:
+              'API request failed with status ${response.statusCode}: ${response.data}',
+        );
+      }
+    } on DioException catch (e) {
+      debugPrint('DioException in fetchAllTags: ${e.message}');
+      debugPrint('DioException response data: ${e.response?.data}');
+      if (e.response?.data is String &&
+          (e.response!.data as String).isNotEmpty) {
+        throw Exception('Failed to load tags: ${e.response!.data}');
+      } else if (e.response?.data is Map &&
+          e.response!.data['message'] != null) {
+        throw Exception('Failed to load tags: ${e.response!.data['message']}');
+      }
+      throw Exception('Failed to load tags (Network error): ${e.message}');
+    } catch (e) {
+      debugPrint('Generic error in fetchAllTags: $e');
+      throw Exception(
+        'An unexpected error occurred while fetching tags: ${e.toString()}',
+      );
+    }
+  }
+
   Future<Map<String, dynamic>> createPost(
     String content,
     List<String> tags,
