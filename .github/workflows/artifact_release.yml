@@ -39,13 +39,13 @@ jobs:
           flutter test --coverage --reporter=expanded
           echo " All tests passed!"
 
-      - name: Upload test coverage
-        uses: actions/upload-artifact@v4
-        with:
-          name: test-coverage-${{ github.run_number }}
-          path: coverage/
-          retention-days: 7
-        if: always()
+      # - name: Upload test coverage
+      #   uses: actions/upload-artifact@v4
+      #   with:
+      #     name: test-coverage-${{ github.run_number }}
+      #     path: coverage/
+      #     retention-days: 7
+      #   if: always()
 
       - name: Test Summary
         run: |
