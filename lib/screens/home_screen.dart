@@ -21,12 +21,28 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   late AnimationController _animationController;
   late Animation<double> _animation;
 
-  static const List<Widget> _widgetOptions = <Widget>[
-    FeedScreen(),
-    BusListScreen(showBottomNav: false, showInstalledOnly: false),
-    BusListScreen(showBottomNav: false, showInstalledOnly: true),
-    LocationScreen(),
-  ];
+  Widget _getScreenForIndex(int index) {
+    switch (index) {
+      case 0:
+        return const FeedScreen();
+      case 1:
+        return BusListScreen(
+          showBottomNav: false, 
+          showInstalledOnly: false,
+          key: ValueKey('all_buses_${DateTime.now().millisecondsSinceEpoch}'),
+        );
+      case 2:
+        return BusListScreen(
+          showBottomNav: false, 
+          showInstalledOnly: true,
+          key: ValueKey('installed_buses_${DateTime.now().millisecondsSinceEpoch}'),
+        );
+      case 3:
+        return const LocationScreen();
+      default:
+        return const FeedScreen();
+    }
+  }
 
   @override
   void initState() {
@@ -166,7 +182,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             begin: const Offset(0.0, 0.1),
             end: Offset.zero,
           ).animate(_animation),
-          child: _widgetOptions.elementAt(_selectedIndex),
+          child: _getScreenForIndex(_selectedIndex),
         ),
       ),
       bottomNavigationBar: Container(

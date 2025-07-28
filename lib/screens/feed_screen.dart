@@ -88,7 +88,7 @@ class _FeedScreenState extends State<FeedScreen> with TickerProviderStateMixin {
 
     final result = await _feedScreenUtils.loadPosts(
       currentPage: isRefresh ? 0 : _currentPage,
-      pageSize: 2,
+      pageSize: isRefresh || _currentPage == 0 ? 4 : 2,
       isRefresh: isRefresh,
       existingPosts: _posts,
       filterTags: filterTags,
