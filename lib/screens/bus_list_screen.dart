@@ -120,6 +120,16 @@ class _BusListScreenState extends State<BusListScreen> {
         _showSuccessSnackBar('${bus.name} installed successfully');
       }
 
+      // Clear current list and refresh with fresh data
+      setState(() {
+        _buses.clear();
+        _currentPage = 0;
+        _hasMore = true;
+      });
+      
+      // Small delay to ensure server has updated the bus status
+      await Future.delayed(const Duration(milliseconds: 500));
+      
       // Refresh the list
       await _loadBuses();
     } catch (e) {
