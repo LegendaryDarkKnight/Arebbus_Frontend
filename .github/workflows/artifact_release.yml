@@ -160,12 +160,12 @@ jobs:
           asset_name: arebbus-v${{ steps.version.outputs.VERSION }}-build${{ github.run_number }}.apk
           asset_content_type: application/vnd.android.package-archive
 
-      - name: Upload APK as Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: arebbus-apk-v${{ steps.version.outputs.VERSION }}-build${{ github.run_number }}
-          path: build/app/outputs/flutter-apk/arebbus-v${{ steps.version.outputs.VERSION }}-build${{ github.run_number }}.apk
-          retention-days: 30
+      # - name: Upload APK as Artifact
+      #   uses: actions/upload-artifact@v4
+      #   with:
+      #     name: arebbus-apk-v${{ steps.version.outputs.VERSION }}-build${{ github.run_number }}
+      #     path: build/app/outputs/flutter-apk/arebbus-v${{ steps.version.outputs.VERSION }}-build${{ github.run_number }}.apk
+      #     retention-days: 30
 
       - name: Build Summary
         run: |
