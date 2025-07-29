@@ -3,16 +3,38 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:geolocator/geolocator.dart';
 
-// Mock data model for backend markers
+/// Data model representing location markers displayed on the map.
+/// 
+/// This class defines the structure for points of interest, bus stops,
+/// landmarks, and other location-based entities that can be displayed
+/// on the interactive map. Each marker contains position data and
+/// visual/descriptive information for user interaction.
 class LocationMarker {
+  /// Unique identifier for the marker
   final String id;
+  
+  /// Display name of the location
   final String name;
+  
+  /// Detailed description of the location
   final String description;
+  
+  /// Geographic coordinates of the marker
   final LatLng position;
+  
+  /// Category classification for grouping and filtering
   final String category;
+  
+  /// Icon to display for this marker type
   final IconData icon;
+  
+  /// Color theme for the marker visualization
   final Color color;
 
+  /// Creates a new LocationMarker instance.
+  /// 
+  /// All parameters are required to ensure complete marker information
+  /// for proper display and interaction on the map interface.
   LocationMarker({
     required this.id,
     required this.name,
@@ -24,6 +46,16 @@ class LocationMarker {
   });
 }
 
+/// Interactive map screen for the Arebbus application.
+/// 
+/// This screen provides a comprehensive map interface for users to:
+/// - View their current location and nearby transportation options
+/// - Browse bus stops, routes, and points of interest
+/// - Interact with location markers for detailed information
+/// - Navigate and explore the transportation network visually
+/// 
+/// The map integrates location services and displays real-time data
+/// about buses, stops, and user-generated content in the area.
 class MapScreen extends StatefulWidget {
   const MapScreen({super.key});
 
@@ -31,10 +63,22 @@ class MapScreen extends StatefulWidget {
   State<MapScreen> createState() => _MapScreenState();
 }
 
+/// State class for the MapScreen widget.
+/// 
+/// Manages map display, location services, marker rendering, and user
+/// interactions. Handles location permissions, data loading, and
+/// real-time updates of transportation information on the map.
 class _MapScreenState extends State<MapScreen> {
+  /// Controller for managing map operations and view changes
   final MapController _mapController = MapController();
+  
+  /// Current user location coordinates (null if not available)
   LatLng? _currentLocation;
+  
+  /// Loading state indicator for async operations
   bool _isLoading = true;
+  
+  /// Flag indicating whether location permissions have been granted
   bool _locationPermissionGranted = false;
 
   // Mock data - replace with backend data

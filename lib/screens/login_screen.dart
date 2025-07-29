@@ -2,6 +2,19 @@ import 'package:flutter/material.dart';
 import 'package:arebbus/service/api_service.dart';
 import 'register_screen.dart';
 
+/// User authentication login screen for the Arebbus application.
+/// 
+/// This screen provides the login interface for existing users to access
+/// their accounts. It includes form validation, secure password handling,
+/// and integration with the authentication API. The screen also provides
+/// navigation to the registration screen for new users.
+/// 
+/// Features include:
+/// - Email and password input with validation
+/// - Secure password field with toggle visibility
+/// - Loading state management during authentication
+/// - Error handling and user feedback
+/// - Navigation to registration for new users
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
 
@@ -9,14 +22,28 @@ class LoginScreen extends StatefulWidget {
   State<LoginScreen> createState() => _LoginScreenState();
 }
 
+/// State class for the LoginScreen widget.
+/// 
+/// Manages user input, form validation, authentication requests, and
+/// UI state updates. Handles secure password input and provides
+/// feedback during the login process.
 class _LoginScreenState extends State<LoginScreen> {
+  /// Form key for validating login form inputs
   final _formKey = GlobalKey<FormState>();
+  
+  /// Text controller for email input field
   final _emailController = TextEditingController();
+  
+  /// Text controller for password input field
   final _passwordController = TextEditingController();
 
+  /// Loading state indicator for login operations
   bool _isLoading = false;
+  
+  /// Flag controlling password field visibility
   bool _obscurePassword = true;
 
+  /// Regular expression for email validation
   static final _emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
 
   @override
@@ -26,6 +53,14 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
+  /// Handles user login authentication process.
+  /// 
+  /// This method validates the form inputs, makes an API call to authenticate
+  /// the user, and handles the response. It manages loading states and provides
+  /// appropriate feedback to the user based on the authentication result.
+  /// 
+  /// On successful login, the user is navigated to the main app interface.
+  /// On failure, error messages are displayed to guide the user.
   Future<void> _login() async {
     if (!_formKey.currentState!.validate()) return;
 

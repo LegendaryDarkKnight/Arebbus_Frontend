@@ -8,6 +8,17 @@ import 'package:arebbus/service/api_service.dart';
 
 import 'dart:math' as math;
 
+/// Screen for adding new buses to the Arebbus system.
+/// 
+/// This screen provides a comprehensive interface for bus operators and
+/// administrators to register new buses in the system. It allows users to:
+/// - Create new bus entries with capacity and naming information
+/// - Assign buses to existing routes or create new custom routes
+/// - Define route stops using an interactive map interface
+/// - Visualize routes and stops before finalizing the bus registration
+/// 
+/// The screen integrates with the API service to persist bus and route data
+/// and provides real-time feedback during the creation process.
 class AddBusScreen extends StatefulWidget {
   const AddBusScreen({super.key});
 
@@ -15,34 +26,69 @@ class AddBusScreen extends StatefulWidget {
   State<AddBusScreen> createState() => _AddBusScreenState();
 }
 
+/// State class for the AddBusScreen widget.
+/// 
+/// Manages the complex state required for bus creation including form validation,
+/// route selection/creation, map interactions, and API communications. Handles
+/// both existing route assignment and custom route creation workflows.
 class _AddBusScreenState extends State<AddBusScreen> {
+  /// API service instance for backend communications
   final ApiService _apiService = ApiService.instance;
+  
+  /// Controller for managing map operations and view changes
   final MapController _mapController = MapController();
+  
+  /// Form key for validating bus creation form inputs
   final _formKey = GlobalKey<FormState>();
 
   // Form controllers
+  /// Text controller for bus name input field
   final _busNameController = TextEditingController();
+  
+  /// Text controller for bus capacity input field
   final _capacityController = TextEditingController();
+  
+  /// Text controller for custom route name input field
   final _routeNameController = TextEditingController();
+  
+  /// Text controller for new stop name input field
   final _stopNameController = TextEditingController();
 
   // Route selection state
+  /// Flag indicating whether to use an existing route or create a new one
   bool _useExistingRoute = true;
+  
+  /// Currently selected existing route for bus assignment
   model.Route? _selectedRoute;
+  
+  /// List of available routes fetched from the API
   List<model.Route> _availableRoutes = [];
+  
+  /// Loading state indicator for route fetching operations
   bool _isLoadingRoutes = false;
 
   // Custom route creation state
+  /// List of stops created for a custom route
   final List<Stop> _customStops = [];
+  
+  /// Temporary location for a stop being created
   LatLng? _pendingStopLocation;
+  
+  /// Flag indicating if a stop is currently being created (unused but preserved)
   final bool _isCreatingStop = false;
 
   // Map state
+  /// List of markers displayed on the map for route visualization
   final List<Marker> _markers = [];
+  
+  /// List of polylines drawn on the map to show route paths
   final List<Polyline> _polylines = [];
+  
+  /// Default map center coordinates (NYC coordinates as fallback)
   final LatLng _initialCenter = const LatLng(40.7128, -74.0060); // NYC default
 
   // UI state
+  /// Loading state indicator for bus creation operations
   bool _isCreatingBus = false;
 
   @override

@@ -7,20 +7,52 @@ import 'package:arebbus/screens/map_screen.dart';
 import 'package:arebbus/screens/profile_screen.dart';
 import 'package:arebbus/screens/location_screen.dart';
 
+/// Main home screen with bottom navigation for the Arebbus application.
+/// 
+/// This screen serves as the primary navigation hub for the app, providing
+/// access to all major features through a tabbed bottom navigation interface.
+/// It manages navigation between different screens including the feed, bus list,
+/// map view, profile, and addon sections.
+/// 
+/// The screen supports animated transitions between tabs and can be initialized
+/// with a specific tab index for deep linking or navigation from other screens.
 class HomeScreen extends StatefulWidget {
+  /// Optional initial tab index to display when the screen loads
   final int? initialTabIndex;
   
   const HomeScreen({super.key, this.initialTabIndex});
+  
   @override
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
+/// State class for the HomeScreen widget.
+/// 
+/// Manages the bottom navigation state, screen transitions, and animations.
+/// Implements TickerProviderStateMixin to support animation controllers
+/// for smooth transitions between different sections of the app.
 class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
+  /// Currently selected tab index in the bottom navigation
   int _selectedIndex = 0;
+  
+  /// Loading state indicator for async operations
   bool _isLoading = false;
+  
+  /// Animation controller for tab transition animations
   late AnimationController _animationController;
+  
+  /// Animation object for smooth tab transitions
   late Animation<double> _animation;
 
+  /// Returns the appropriate screen widget for the given tab index.
+  /// 
+  /// This method maps tab indices to their corresponding screen widgets,
+  /// handling the navigation logic for the bottom navigation bar.
+  /// 
+  /// Parameters:
+  /// - [index]: The tab index (0-based) to get the screen for
+  /// 
+  /// Returns: The widget representing the screen for the specified tab
   Widget _getScreenForIndex(int index) {
     switch (index) {
       case 0:

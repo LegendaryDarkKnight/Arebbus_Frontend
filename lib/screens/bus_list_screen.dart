@@ -8,10 +8,27 @@ import 'package:arebbus/screens/home_screen.dart';
 import 'package:arebbus/services/location_tracking_service.dart';
 import 'package:geolocator/geolocator.dart';
 
+/// Bus listing screen for the Arebbus application.
+/// 
+/// This screen displays a comprehensive list of buses available in the system,
+/// supporting both all buses and user-installed buses views. It provides
+/// features for browsing, searching, and managing buses with infinite scrolling
+/// pagination for efficient data loading.
+/// 
+/// The screen integrates with location services to show distance-based
+/// information and supports navigation to detailed bus views and bus creation.
 class BusListScreen extends StatefulWidget {
+  /// Flag to filter and show only user-installed buses
   final bool showInstalledOnly;
+  
+  /// Flag to control bottom navigation visibility
   final bool showBottomNav;
 
+  /// Creates a new BusListScreen instance.
+  /// 
+  /// Parameters:
+  /// - [showInstalledOnly]: If true, shows only buses installed by the user
+  /// - [showBottomNav]: If true, displays the bottom navigation bar
   const BusListScreen({
     super.key,
     this.showInstalledOnly = false,
@@ -22,14 +39,31 @@ class BusListScreen extends StatefulWidget {
   State<BusListScreen> createState() => _BusListScreenState();
 }
 
+/// State class for the BusListScreen widget.
+/// 
+/// Manages bus data loading, pagination, user interactions, and location-based
+/// features. Handles infinite scrolling, error states, and navigation to
+/// detailed bus information screens.
 class _BusListScreenState extends State<BusListScreen> {
+  /// API service instance for backend communications
   final ApiService _apiService = ApiService.instance;
+  
+  /// Scroll controller for implementing infinite scrolling pagination
   final ScrollController _scrollController = ScrollController();
 
+  /// List of buses currently loaded and displayed
   List<Bus> _buses = [];
+  
+  /// Current page number for pagination (0-based)
   int _currentPage = 0;
+  
+  /// Loading state indicator for API operations
   bool _isLoading = false;
+  
+  /// Flag indicating if more data is available for loading
   bool _hasMore = true;
+  
+  /// Error message to display when data loading fails
   String? _errorMessage;
 
   @override

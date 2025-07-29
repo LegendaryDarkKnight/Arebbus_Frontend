@@ -6,6 +6,16 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:geolocator/geolocator.dart';
 
+/// Addon management screen for the Arebbus application.
+/// 
+/// This screen provides functionality for users to manage and interact with
+/// addons/extensions that enhance the bus tracking experience. It includes
+/// a map interface for creating custom routes and stops, managing existing
+/// routes, and visualizing transportation data on an interactive map.
+/// 
+/// The screen integrates location services to show the user's current position
+/// and allows for route creation by selecting points on the map. It serves as
+/// both an addon showcase and a route management tool.
 class AddonScreen extends StatefulWidget {
   const AddonScreen({super.key});
 
@@ -13,17 +23,38 @@ class AddonScreen extends StatefulWidget {
   State<AddonScreen> createState() => _AddonScreenState();
 }
 
+/// State class for the AddonScreen widget.
+/// 
+/// Manages the interactive map, location services, route creation, and
+/// addon-related functionality. Handles user interactions for creating
+/// custom routes and managing transportation data.
 class _AddonScreenState extends State<AddonScreen> {
+  /// Controller for managing map operations and interactions
   final MapController _mapController = MapController();
+  
+  /// Current user location coordinates (null if not available)
   LatLng? _currentLocation;
+  
+  /// Loading state indicator for async operations
   bool _isLoading = true;
+  
+  /// Flag indicating whether location permissions have been granted
   bool _locationPermissionGranted = false;
 
   // State for route and stop management
+  /// Currently selected route for editing or viewing
   RouteModel? _selectedRoute;
+  
+  /// List of mock routes used for demonstration and testing
   late final List<RouteModel> _mockRoutes;
+  
+  /// List of points selected by the user for creating new routes
   final List<LatLng> _selectedPoints = [];
+  
+  /// List of markers displayed on the map for route visualization
   final List<Marker> _routeMarkers = [];
+  
+  /// Polyline representing the path of the current route
   Polyline? _routePolyline;
 
   @override
@@ -33,7 +64,14 @@ class _AddonScreenState extends State<AddonScreen> {
     _initializeMap();
   }
 
-  // Generate mock data for routes
+  /// Generates mock route data for demonstration and testing purposes.
+  /// 
+  /// Creates predefined routes with stops in Chittagong area including
+  /// University Shuttle and City Circular routes. Each route contains
+  /// multiple stops with specific coordinates and metadata.
+  /// 
+  /// This method is called during initialization to populate the UI
+  /// with sample data before real data is loaded from the API.
   void _generateMockRoutes() {
     _mockRoutes = [
       RouteModel(
@@ -93,10 +131,25 @@ class _AddonScreenState extends State<AddonScreen> {
     ];
   }
 
+  /// Initializes the map interface and related services.
+  /// 
+  /// This method is called after widget initialization to set up
+  /// the map component and acquire the user's current location.
+  /// It triggers location permission requests and updates the UI
+  /// based on the location availability.
   Future<void> _initializeMap() async {
     await _getCurrentLocation();
   }
 
+  /// Retrieves the user's current location using GPS services.
+  /// 
+  /// This method handles location permission requests, checks location
+  /// service availability, and updates the UI with the current position.
+  /// If location access fails, appropriate error handling is performed
+  /// and the loading state is updated accordingly.
+  /// 
+  /// The obtained location is used to center the map and provide
+  /// location-based features in the addon interface.
   Future<void> _getCurrentLocation() async {
     // ... (Your existing _getCurrentLocation method remains unchanged)
     try {
@@ -145,6 +198,14 @@ class _AddonScreenState extends State<AddonScreen> {
     }
   }
 
+  /// Displays a dialog to inform the user about location access issues.
+  /// 
+  /// This method shows an alert dialog when location services are unavailable,
+  /// permissions are denied, or other location-related errors occur. It provides
+  /// options for the user to retry or acknowledge the error.
+  /// 
+  /// Parameters:
+  /// - [message]: The error or information message to display to the user
   void _showLocationDialog(String message) {
     // ... (Your existing _showLocationDialog method remains unchanged)
     showDialog(
@@ -170,8 +231,15 @@ class _AddonScreenState extends State<AddonScreen> {
     );
   }
 
-  // lib/screens/addon_screen.dart
-
+  /// Handles route selection and updates the map visualization.
+  /// 
+  /// This method is called when a user selects a different route from
+  /// the dropdown or interface. It updates the map to show markers for
+  /// all stops in the selected route and draws a polyline connecting them.
+  /// The map is automatically fitted to show the entire route.
+  /// 
+  /// Parameters:
+  /// - [route]: The selected route to display, or null to clear the selection
   void _onRouteSelected(RouteModel? route) {
     setState(() {
       _selectedRoute = route;
@@ -228,6 +296,15 @@ class _AddonScreenState extends State<AddonScreen> {
     });
   }
 
+  /// Creates stops from user-selected points on the map.
+  /// 
+  /// This method processes all points that the user has selected by tapping
+  /// on the map and creates corresponding bus stops. For each point, it
+  /// prompts the user to enter a name for the stop and then calls the API
+  /// to create the stop with the provided coordinates and name.
+  /// 
+  /// The method shows progress feedback and clears the selection after
+  /// processing all points successfully.
   Future<void> _createStopsFromSelection() async {
     if (_selectedPoints.isEmpty) return;
 
@@ -258,6 +335,18 @@ class _AddonScreenState extends State<AddonScreen> {
     });
   }
 
+  /// Shows a dialog for the user to enter a name for a new bus stop.
+  /// 
+  /// This method displays a modal dialog that allows the user to input
+  /// a name for a bus stop being created at a specific location. The dialog
+  /// shows the coordinates of the selected point and provides a text field
+  /// for entering the stop name.
+  /// 
+  /// Parameters:
+  /// - [position]: The geographic coordinates where the stop will be created
+  /// - [stopNumber]: The sequential number of this stop in the current batch
+  /// 
+  /// Returns: The entered stop name, or null if the user cancels
   Future<String?> _showAddStopNameDialog(LatLng position, int stopNumber) {
     final TextEditingController nameController = TextEditingController();
     return showDialog<String>(
@@ -303,7 +392,17 @@ class _AddonScreenState extends State<AddonScreen> {
     );
   }
 
-  // API service integration (Your existing createStop method)
+  /// Creates a new bus stop via API call.
+  /// 
+  /// This method integrates with the API service to create a new bus stop
+  /// with the specified name and coordinates. It shows progress feedback
+  /// to the user during the operation and handles both success and error
+  /// scenarios appropriately.
+  /// 
+  /// Parameters:
+  /// - [name]: The display name for the new bus stop
+  /// - [latitude]: Geographic latitude coordinate of the stop
+  /// - [longitude]: Geographic longitude coordinate of the stop
   Future<void> createStop(
     String name,
     double latitude,
@@ -350,6 +449,11 @@ class _AddonScreenState extends State<AddonScreen> {
     }
   }
 
+  /// Centers the map on the user's current location.
+  /// 
+  /// This method moves the map view to focus on the user's current position
+  /// with an appropriate zoom level. If the current location is not available,
+  /// it triggers a new location request to update the position.
   void _centerOnCurrentLocation() {
     if (_currentLocation != null) {
       _mapController.move(_currentLocation!, 15.0);
@@ -358,6 +462,16 @@ class _AddonScreenState extends State<AddonScreen> {
     }
   }
 
+  /// Builds the interactive map panel widget.
+  /// 
+  /// This method creates the main map interface component that allows users
+  /// to view their current location, browse routes, and select points for
+  /// creating new stops. The map includes tile layers, markers for stops,
+  /// polylines for routes, and interactive tap handling.
+  /// 
+  /// During loading, it shows a progress indicator instead of the map.
+  /// 
+  /// Returns: A widget containing the map interface or loading indicator
   Widget _buildMapPanel() {
     if (_isLoading) {
       return Container(
@@ -453,6 +567,19 @@ class _AddonScreenState extends State<AddonScreen> {
     );
   }
 
+  /// Builds the main user interface for the addon screen.
+  /// 
+  /// This method constructs the complete UI layout including:
+  /// - App bar with screen title
+  /// - Route selection dropdown for viewing existing routes
+  /// - Interactive map for location selection and route visualization
+  /// - Action buttons for creating stops and clearing selections
+  /// - Instructional text and status indicators
+  /// 
+  /// The UI is responsive and updates based on user interactions and
+  /// state changes such as route selection and point selection on the map.
+  /// 
+  /// Returns: A Scaffold widget containing the complete screen layout
   @override
   Widget build(BuildContext context) {
     return Scaffold(

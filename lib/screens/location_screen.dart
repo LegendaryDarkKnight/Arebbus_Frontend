@@ -10,6 +10,18 @@ import 'package:arebbus/models/waiting_users_count.dart';
 import 'package:arebbus/services/location_tracking_service.dart';
 import 'dart:async';
 
+/// Real-time location tracking screen for the Arebbus application.
+/// 
+/// This screen provides comprehensive location-based features including:
+/// - Real-time user location tracking and display
+/// - Live bus locations and movement on an interactive map
+/// - Waiting users count for different buses
+/// - Location sharing and tracking service integration
+/// - Visual representation of transportation network activity
+/// 
+/// The screen integrates with the LocationTrackingService for background
+/// location updates and displays real-time information about buses and
+/// other users in the transportation network.
 class LocationScreen extends StatefulWidget {
   const LocationScreen({super.key});
 
@@ -17,19 +29,46 @@ class LocationScreen extends StatefulWidget {
   State<LocationScreen> createState() => _LocationScreenState();
 }
 
+/// State class for the LocationScreen widget.
+/// 
+/// Manages real-time location data, map display, and tracking service
+/// integration. Handles location permissions, data loading, and provides
+/// live updates of bus and user positions on the map interface.
 class _LocationScreenState extends State<LocationScreen> {
+  /// Controller for managing map operations and view changes
   final MapController _mapController = MapController();
+  
+  /// API service instance for backend communications
   final ApiService _apiService = ApiService.instance;
+  
+  /// Location tracking service for background position updates
   final LocationTrackingService _trackingService = LocationTrackingService.instance;
   
+  /// Current user location coordinates (null if not available)
   LatLng? _currentLocation;
+  
+  /// User location status information including tracking state
   UserLocation? _userLocationStatus;
+  
+  /// Response containing bus location data from the API
   BusLocationResponse? _busLocations;
+  
+  /// Count of users waiting for buses at different locations
   WaitingUsersCount? _waitingUsersCount;
+  
+  /// Loading state indicator for async operations
   bool _isLoading = true;
+  
+  /// Error message to display when operations fail
   String? _errorMessage;
+  
+  /// List of markers displayed on the map for visualization
   List<Marker> _markers = [];
+  
+  /// Flag indicating if the map is ready for operations
   bool _mapReady = false;
+  
+  /// Timer for periodic waiting users count updates
   Timer? _waitingCountTimer;
 
   @override
@@ -46,6 +85,15 @@ class _LocationScreenState extends State<LocationScreen> {
     super.dispose();
   }
 
+  /// Initializes location services and starts real-time tracking.
+  /// 
+  /// This method sets up the location tracking functionality by:
+  /// - Requesting location permissions from the user
+  /// - Starting the background location tracking service
+  /// - Loading initial location data and bus positions
+  /// - Setting up periodic updates for waiting users count
+  /// 
+  /// Handles errors gracefully and provides user feedback for issues.
   Future<void> _initializeLocation() async {
     setState(() {
       _isLoading = true;

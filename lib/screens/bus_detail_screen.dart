@@ -5,21 +5,53 @@ import 'package:arebbus/models/bus.dart';
 import 'package:arebbus/service/api_service.dart';
 import 'package:arebbus/screens/bus_list_screen.dart';
 
+/// Detailed bus information screen for the Arebbus application.
+/// 
+/// This screen provides comprehensive information about a specific bus,
+/// including its route visualization, stop details, current status, and
+/// user interaction options. It displays an interactive map showing the
+/// bus route with all stops and allows users to install/uninstall the bus
+/// for tracking notifications.
+/// 
+/// Features include:
+/// - Interactive map with route visualization
+/// - Stop markers with detailed information
+/// - Bus installation status and controls
+/// - Real-time bus information display
+/// - Navigation back to bus listing
 class BusDetailScreen extends StatefulWidget {
+  /// The bus object containing all details to display
   final Bus bus;
 
+  /// Creates a new BusDetailScreen for the specified bus.
+  /// 
+  /// Parameter:
+  /// - [bus]: The bus object containing route and operational information
   const BusDetailScreen({super.key, required this.bus});
 
   @override
   State<BusDetailScreen> createState() => _BusDetailScreenState();
 }
 
+/// State class for the BusDetailScreen widget.
+/// 
+/// Manages the map display, route visualization, user interactions, and
+/// bus installation operations. Handles the complex logic for displaying
+/// bus routes, stops, and providing user interaction features.
 class _BusDetailScreenState extends State<BusDetailScreen> {
+  /// API service instance for backend communications
   final ApiService _apiService = ApiService.instance;
+  
+  /// Controller for managing map operations and view changes
   final MapController _mapController = MapController();
 
+  /// List of markers displayed on the map for route stops
   List<Marker> _markers = [];
+  
+  /// List of polylines drawn on the map to show the bus route
   List<Polyline> _polylines = [];
+  
+  /// Initial center coordinates for the map view
   late LatLng _initialCenter;
 
   @override
@@ -28,6 +60,15 @@ class _BusDetailScreenState extends State<BusDetailScreen> {
     _setupMap();
   }
 
+  /// Sets up the map display with route visualization and stop markers.
+  /// 
+  /// This method initializes the map components by creating markers for
+  /// each bus stop along the route and drawing polylines to connect them.
+  /// It handles the visual representation of the bus route and configures
+  /// the initial map view to show the complete route.
+  /// 
+  /// Stop markers are color-coded: green for start, red for end, and
+  /// blue for intermediate stops.
   void _setupMap() {
     _markers = [];
     _polylines = [];

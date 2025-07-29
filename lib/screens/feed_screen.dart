@@ -5,28 +5,75 @@ import 'package:arebbus/utils/feed_screen_utils.dart';
 import 'package:arebbus/widgets/post_card.dart';
 import 'package:flutter/material.dart';
 
+/// Social feed screen for the Arebbus application.
+/// 
+/// This screen displays a social media-style feed where users can view,
+/// interact with, and create posts related to bus transportation. It provides
+/// features for browsing community content, filtering posts by tags and
+/// criteria, searching for specific content, and engaging with posts through
+/// comments and upvotes.
+/// 
+/// The feed supports real-time updates, infinite scrolling, advanced filtering,
+/// and social interaction features to build an engaged transportation community.
 class FeedScreen extends StatefulWidget {
   const FeedScreen({super.key});
+  
   @override
   State<FeedScreen> createState() => _FeedScreenState();
 }
 
+/// State class for the FeedScreen widget.
+/// 
+/// Manages the complex state required for the social feed including post data,
+/// filtering and sorting options, pagination, search functionality, and user
+/// interactions. Implements TickerProviderStateMixin for animation support.
 class _FeedScreenState extends State<FeedScreen> with TickerProviderStateMixin {
+  /// Complete list of posts fetched from the API
   List<Post> _posts = [];
+  
+  /// Filtered and sorted posts displayed to the user
   List<Post> _filteredPosts = [];
+  
+  /// Currently selected tag filter for post filtering
   String _selectedTagFilter = 'All';
+  
+  /// Current sorting criteria for post ordering
   String _sortBy = 'Default';
+  
+  /// Loading state indicator for initial data loading
   bool _isLoading = true;
+  
+  /// Text controller for search input functionality
   final TextEditingController _searchController = TextEditingController();
+  
+  /// Utility class for feed-specific operations and logic
   late FeedScreenUtils _feedScreenUtils;
+  
+  /// Flag controlling visibility of advanced filter options
   bool _showAdvancedFilters = false;
+  
+  /// List of available tags for filtering purposes
   List<String> _availableFilterTags = [];
+  
+  /// Current page number for pagination
   int _currentPage = 0;
+  
+  /// Total number of pages available from the API
   int _totalPages = 10;
+  
+  /// Loading state indicator for pagination operations
   bool _isLoadingMore = false;
+  
+  /// Scroll controller for infinite scrolling implementation
   final ScrollController _scrollController = ScrollController();
+  
+  /// Error message for failed data loading operations
   String? _loadError;
+  
+  /// Flag indicating whether to use backend or client-side filtering
   bool _useBackendFiltering = false;
+  
+  /// List of multiple selected tags for advanced filtering
   List<String> _selectedTags = [];
 
   @override
