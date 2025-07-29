@@ -1,18 +1,61 @@
 import 'package:arebbus/models/route.dart';
 
+/// Represents a bus entity in the Arebbus transportation system.
+/// 
+/// This model contains all information about a bus including its metadata,
+/// route information, installation statistics, and user interactions.
+/// Buses can be created by users and "installed" by others for tracking.
+/// The model supports hierarchical relationships where buses can be based on other buses.
 class Bus {
+  /// Unique identifier for the bus (nullable for new buses not yet saved)
   final int? id;
+  
+  /// Display name of the bus
   final String name;
+  
+  /// Name of the user who created this bus
   final String authorName;
+  
+  /// Maximum passenger capacity of the bus
   final int capacity;
+  
+  /// Number of users who have installed this bus for tracking
   final int numInstall;
+  
+  /// Number of upvotes this bus has received from users
   final int numUpvote;
+  
+  /// Current operational status of the bus (e.g., "ACTIVE", "INACTIVE")
   final String? status;
+  
+  /// The route that this bus follows (nullable if no route assigned)
   final Route? route;
+  
+  /// Reference to another bus that this bus is based on (for bus variations)
   final Bus? basedOn;
+  
+  /// Whether the current user has upvoted this bus
   final bool upvoted;
+  
+  /// Whether the current user has installed this bus for tracking
   final bool installed;
 
+  /// Creates a new Bus instance.
+  /// 
+  /// Required parameters:
+  /// - [name]: Display name of the bus
+  /// - [authorName]: Name of the user who created this bus
+  /// - [capacity]: Maximum passenger capacity
+  /// - [numInstall]: Number of users who have installed this bus
+  /// - [numUpvote]: Number of upvotes received
+  /// - [upvoted]: Whether current user has upvoted
+  /// - [installed]: Whether current user has installed this bus
+  /// 
+  /// Optional parameters:
+  /// - [id]: Unique identifier (null for new buses)
+  /// - [status]: Current operational status
+  /// - [route]: Associated route information
+  /// - [basedOn]: Reference to parent bus if this is a variation
   Bus({
     this.id,
     required this.name,
@@ -27,6 +70,15 @@ class Bus {
     required this.installed,
   });
 
+  /// Creates a Bus instance from a JSON map.
+  /// 
+  /// This factory constructor deserializes bus data from API responses.
+  /// It handles nested objects like Route and recursive Bus references safely.
+  /// 
+  /// Parameters:
+  /// - [json]: Map containing the bus data from API response
+  /// 
+  /// Returns a new Bus instance populated from the JSON data.
   factory Bus.fromJson(Map<String, dynamic> json) {
     return Bus(
       id: json['id'],

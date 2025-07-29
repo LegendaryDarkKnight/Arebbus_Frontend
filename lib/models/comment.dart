@@ -1,13 +1,47 @@
+/// Represents a comment on a post in the Arebbus community platform.
+/// 
+/// Comments allow users to engage with posts by providing additional content,
+/// discussions, or reactions. Each comment is associated with a specific post
+/// and supports upvoting functionality similar to posts. Comments maintain
+/// their own engagement metrics and author information.
 class Comment {
+  /// Unique identifier for the comment
   final int id;
+  
+  /// The text content of the comment
   final String content;
+  
+  /// Display name of the comment author
   final String authorName;
+  
+  /// ID of the post this comment belongs to
   final int postId;
+  
+  /// Timestamp when the comment was created
   final DateTime createdAt;
+  
+  /// Number of upvotes this comment has received
   final int numUpvote;
+  
+  /// Whether the current user has upvoted this comment
   final bool upvoted;
+  
+  /// Optional profile image URL of the comment author
   final String? authorImage;
 
+  /// Creates a new Comment instance.
+  /// 
+  /// Required parameters:
+  /// - [id]: Unique identifier for the comment
+  /// - [content]: The text content of the comment
+  /// - [authorName]: Display name of the comment author
+  /// - [postId]: ID of the post this comment belongs to
+  /// - [createdAt]: Timestamp when the comment was created
+  /// - [numUpvote]: Number of upvotes received
+  /// - [upvoted]: Whether current user has upvoted this comment
+  /// 
+  /// Optional parameters:
+  /// - [authorImage]: Profile image URL of the comment author
   Comment({
     required this.id,
     required this.content,
@@ -19,6 +53,16 @@ class Comment {
     this.authorImage,
   });
 
+  /// Creates a Comment instance from a JSON map.
+  /// 
+  /// This factory constructor handles deserialization of comment data from API responses.
+  /// It properly handles DateTime parsing from string format and provides safe defaults
+  /// for optional fields.
+  /// 
+  /// Parameters:
+  /// - [json]: Map containing comment data from API response
+  /// 
+  /// Returns a new Comment instance populated from JSON data.
   factory Comment.fromJson(Map<String, dynamic> json) {
     return Comment(
       id: json['id'],
@@ -33,7 +77,13 @@ class Comment {
     );
   }
 
-
+  /// Converts the Comment instance to a JSON map.
+  /// 
+  /// This method is used when sending comment data to the API or storing locally.
+  /// The DateTime is converted to ISO 8601 string format for proper serialization.
+  /// Note: There's a typo in the original where 'upVoted' should be 'upvoted'.
+  /// 
+  /// Returns a Map<String, dynamic> representing the comment data.
   Map<String, dynamic> toJson() {
     return {
       'id': id,
