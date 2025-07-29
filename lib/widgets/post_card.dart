@@ -6,8 +6,26 @@ import 'package:arebbus/models/post.dart';
 import 'package:arebbus/service/api_service.dart';
 import 'package:arebbus/widgets/comment_card.dart';
 
-// Utility class for common PostCard functionalities
+/// Utility class providing common functionalities for PostCard widget.
+/// 
+/// PostCardUtils contains static helper methods for:
+/// - Timestamp formatting with relative time display
+/// - Tag appearance configuration with color coding
+/// - Visual styling for different post categories
+/// 
+/// This class centralizes utility functions to maintain consistency
+/// across the social feed interface and improve code reusability.
 class PostCardUtils {
+  /// Formats a timestamp into a human-readable relative time string.
+  /// 
+  /// Converts DateTime objects into user-friendly time representations:
+  /// - Recent times: "just now", "5s ago", "2m ago", "3h ago"
+  /// - Yesterday: "Yesterday at 2:30 PM"
+  /// - Recent days: "3d ago"
+  /// - Older dates: "Mar 15, 2024"
+  /// 
+  /// @param timestamp The DateTime to format
+  /// @return Human-readable time string
   static String formatTimestamp(DateTime timestamp) {
     final now = DateTime.now();
     final difference = now.difference(timestamp);
@@ -28,6 +46,18 @@ class PostCardUtils {
     return DateFormat('MMM d, yyyy').format(timestamp);
   }
 
+  /// Gets the visual appearance configuration for a specific tag.
+  /// 
+  /// Returns a TagAppearance object containing colors and icons appropriate
+  /// for the given tag category. Each tag type has a unique visual style
+  /// to help users quickly identify post categories:
+  /// - Congestion: Red colors with car-burst icon
+  /// - Bus Delay: Orange colors with clock icon
+  /// - Safety concerns: Different color schemes for urgency
+  /// 
+  /// @param tagName The name of the tag to style
+  /// @param theme Current app theme for fallback colors
+  /// @return TagAppearance configuration for the tag
   static TagAppearance getTagAppearance(String? tagName, ThemeData theme) {
     final defaultAppearance = TagAppearance(
       chipBackgroundColor: theme.colorScheme.surfaceContainerHighest,
@@ -80,6 +110,18 @@ class PostCardUtils {
     return tagStyles[tagName] ?? defaultAppearance;
   }
 
+  /// Parses raw comment data from API response into Comment objects.
+  /// 
+  /// This method safely transforms comment data from API responses
+  /// into properly typed Comment objects with all required fields.
+  /// It handles potential null values and provides sensible defaults:
+  /// - Default empty string for missing content
+  /// - Zero upvotes if not specified
+  /// - Current timestamp if creation date is missing
+  /// - Default placeholder image for missing author images
+  /// 
+  /// @param data List of raw comment data from API response
+  /// @return List of parsed Comment objects with all fields populated
   static List<Comment> parseComments(List<dynamic> data) {
     return data.map((item) {
       return Comment(
@@ -100,13 +142,37 @@ class PostCardUtils {
   }
 }
 
-// Data class for tag appearance
+/// Data class defining visual appearance configuration for post tags.
+/// 
+/// TagAppearance encapsulates all visual styling properties needed
+/// to consistently render post tags throughout the application:
+/// - Background and foreground colors for tag chips
+/// - Icon representation for quick visual identification
+/// - Card accent colors for post highlighting
+/// 
+/// This class ensures consistent visual representation of different
+/// tag categories and enables easy theme customization.
 class TagAppearance {
+  /// Background color for the tag chip
   final Color chipBackgroundColor;
+  
+  /// Text color for the tag chip
   final Color chipForegroundColor;
+  
+  /// Icon displayed with the tag for visual identification
   final IconData iconData;
+  
+  /// Accent color used to highlight posts with this tag
   final Color cardAccentColor;
 
+  /// Creates a TagAppearance configuration.
+  /// 
+  /// All parameters are required to ensure complete visual styling.
+  /// 
+  /// @param chipBackgroundColor Background color for tag chips
+  /// @param chipForegroundColor Text color for tag chips
+  /// @param iconData Icon to display with the tag
+  /// @param cardAccentColor Color for highlighting post cards
   const TagAppearance({
     required this.chipBackgroundColor,
     required this.chipForegroundColor,
@@ -115,27 +181,95 @@ class TagAppearance {
   });
 }
 
-// Constants for styling
+/// Constants for consistent PostCard styling and layout.
+/// 
+/// PostCardConstants centralizes all layout and styling values used
+/// throughout the PostCard widget to ensure visual consistency.
+/// These constants define:
+/// - Card dimensions and spacing (margins, padding, elevation)
+/// - Border radius for rounded corners
+/// - Avatar sizing for author profile images
+/// - Chip layout spacing for tag display
+/// - Button padding for interactive elements
+/// - Divider styling for content separation
+/// 
+/// Using constants prevents magic numbers in the code and makes
+/// it easy to adjust the overall visual appearance of post cards.
 class PostCardConstants {
+  /// Vertical margin for post cards
   static const double cardMarginVertical = 8.0;
+  
+  /// Horizontal margin for post cards
   static const double cardMarginHorizontal = 4.0;
+  
+  /// Elevation shadow for post cards
   static const double cardElevation = 1.5;
+  
+  /// Border radius for rounded card corners
   static const double borderRadius = 16.0;
+  
+  /// Internal padding for card content
   static const double padding = 16.0;
+  
+  /// Radius for author avatar images
   static const double avatarRadius = 22.0;
+  
+  /// Horizontal spacing between tag chips
   static const double chipSpacing = 6.0;
+  
+  /// Vertical spacing between chip rows
   static const double chipRunSpacing = 4.0;
+  
+  /// Thickness of content divider lines
   static const double dividerThickness = 0.8;
+  
+  /// Horizontal padding for action buttons
   static const double buttonPaddingHorizontal = 10.0;
+  
+  /// Vertical padding for action buttons
   static const double buttonPaddingVertical = 8.0;
 }
 
+/// Widget for displaying individual posts in the social feed.
+/// 
+/// PostCard is a comprehensive widget that renders a complete post with:
+/// - Author information (name, avatar, timestamp)
+/// - Post content with proper text formatting
+/// - Tag chips with category-specific styling
+/// - Interactive action buttons (upvote, comment, share)
+/// - Upvote count with visual feedback
+/// - Comments section with expand/collapse functionality
+/// - Consistent Material Design styling
+/// 
+/// The widget handles:
+/// - Tag-based visual theming with unique colors per category
+/// - Real-time upvote state management and API integration
+/// - Comment loading and display with pagination
+/// - Error handling for network operations
+/// - Responsive layout for different screen sizes
+/// - Accessibility features for screen readers
 class PostCard extends StatefulWidget {
+  /// The post data to display
   final Post post;
+  
+  /// Callback function triggered when upvote button is tapped
   final VoidCallback onUpvote;
+  
+  /// Callback function triggered when comment button is tapped
   final VoidCallback onComment;
+  
+  /// Callback function triggered when share button is tapped
   final VoidCallback onShare;
 
+  /// Creates a PostCard widget.
+  /// 
+  /// All callback parameters are required to handle user interactions
+  /// properly within the parent widget's context.
+  /// 
+  /// @param post The Post object containing all post data
+  /// @param onUpvote Function to call when user upvotes the post
+  /// @param onComment Function to call when user wants to comment
+  /// @param onShare Function to call when user wants to share the post
   const PostCard({
     super.key,
     required this.post,

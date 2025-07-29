@@ -4,7 +4,30 @@ import 'package:arebbus/models/tag.dart';
 import 'package:arebbus/service/api_service.dart';
 import 'package:flutter/foundation.dart';
 
+/// Utility class for managing feed screen operations and data processing.
+/// 
+/// FeedScreenUtils provides comprehensive functionality for the social feed
+/// feature of the Arebbus app, including:
+/// 
+/// - Post loading with pagination and filtering
+/// - Tag management and filtering
+/// - Data parsing and validation
+/// - Upvote/downvote functionality
+/// - Comment management
+/// - Search and sorting capabilities
+/// - Error handling and data transformation
+/// 
+/// This class handles the complex business logic for feed operations,
+/// separating concerns from the UI layer and providing a clean interface
+/// for feed-related data operations.
 class FeedScreenUtils {
+  /// Returns a list of default tag categories for post classification.
+  /// 
+  /// These tags represent common topics and issues related to bus transportation
+  /// that users can associate with their posts. The tags help categorize and
+  /// filter content in the social feed.
+  /// 
+  /// @return List of predefined tag strings covering transportation-related topics
   List<String> getDefaultTags() {
     return const [
       'Congestion',
@@ -22,6 +45,14 @@ class FeedScreenUtils {
     ];
   }
 
+  /// Parses raw post data from API response into Post objects.
+  /// 
+  /// This method safely transforms API response data into typed Post objects,
+  /// handling potential null values and data type mismatches. It includes
+  /// comprehensive error handling to ensure app stability.
+  /// 
+  /// @param rawPosts Raw data from API response (expected to be List)
+  /// @return List of parsed Post objects, empty list if parsing fails
   List<Post> _parsePosts(dynamic rawPosts) {
     if (rawPosts is! List) {
       debugPrint("Expected List but got: ${rawPosts.runtimeType}");
@@ -48,6 +79,13 @@ class FeedScreenUtils {
     }
   }
 
+  /// Safely parses datetime from various input formats.
+  /// 
+  /// Handles string and other datetime representations from API responses,
+  /// providing fallback to current time if parsing fails.
+  /// 
+  /// @param dateTime Raw datetime value from API
+  /// @return Parsed DateTime object or current time as fallback
   DateTime _parseDateTime(dynamic dateTime) {
     if (dateTime == null) return DateTime.now();
 
@@ -62,6 +100,13 @@ class FeedScreenUtils {
     }
   }
 
+  /// Parses tag data from API response into Tag objects.
+  /// 
+  /// Safely processes tag data, filtering out null or empty values
+  /// and creating proper Tag objects for post classification.
+  /// 
+  /// @param tags Raw tag data from API response
+  /// @return List of parsed Tag objects
   List<Tag> _parseTags(dynamic tags) {
     if (tags is! List) return [];
 
@@ -81,6 +126,13 @@ class FeedScreenUtils {
     }
   }
 
+  /// Parses comment data from API response into Comment objects.
+  /// 
+  /// Safely processes comment data associated with posts, handling
+  /// nested data structures and potential null values.
+  /// 
+  /// @param comments Raw comment data from API response
+  /// @return List of parsed Comment objects
   List<Comment> _parseComments(dynamic comments) {
     if (comments is! List) return [];
 

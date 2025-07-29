@@ -8,6 +8,17 @@ import 'package:arebbus/screens/bus_list_screen.dart';
 import 'package:arebbus/config/app_config.dart';
 import 'package:provider/provider.dart' show ChangeNotifierProvider, Consumer;
 
+/// Entry point of the Arebbus Flutter application.
+/// 
+/// This function initializes the application by:
+/// - Ensuring Flutter binding is initialized for platform-specific features
+/// - Loading application configuration from environment variables
+/// - Initializing the location tracking service singleton for background tracking
+/// - Setting up the Provider pattern for global state management
+/// - Bootstrapping the authentication provider for user session management
+/// 
+/// The app uses a Provider-based architecture for state management and includes
+/// comprehensive routing, theming, and authentication handling.
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await AppConfig.initializeFromEnv();
@@ -25,6 +36,15 @@ void main() async {
 }
 
 /// Route names used throughout the app
+/// 
+/// Defines all the named routes used in the application for navigation.
+/// Using constants helps maintain consistency and prevents typos in route names.
+/// These routes map to different screens and features in the Arebbus app:
+/// - authWrapper: Initial route that determines authentication state
+/// - login/register: Authentication screens for user access
+/// - home: Main dashboard after successful authentication
+/// - allBuses/installedBuses: Bus listing screens with different filters
+/// - busDetail: Individual bus information and tracking screen
 class AppRoutes {
   static const String authWrapper = '/';
   static const String login = '/login';
@@ -36,6 +56,16 @@ class AppRoutes {
 }
 
 /// The main application widget
+/// 
+/// ArebbusApp serves as the root widget of the Flutter application and is responsible for:
+/// - Configuring the MaterialApp with app-wide settings
+/// - Setting up the visual theme using AppTheme.buildTheme()
+/// - Defining the route table for navigation between screens
+/// - Configuring the initial route to start with authentication checking
+/// - Enabling/disabling debug features like the debug banner
+/// 
+/// This widget is wrapped by a ChangeNotifierProvider in main() to provide
+/// access to AuthProvider throughout the widget tree for state management.
 class ArebbusApp extends StatelessWidget {
   const ArebbusApp({super.key});
 
@@ -59,6 +89,18 @@ class ArebbusApp extends StatelessWidget {
 }
 
 /// AuthWrapper to decide which screen to show based on auth status
+/// 
+/// This widget acts as a smart router that determines the initial screen
+/// based on the user's authentication state. It uses the Consumer pattern
+/// to listen to AuthProvider changes and:
+/// 
+/// - Shows a loading indicator while authentication status is being checked
+/// - Navigates to HomeScreen if user is authenticated
+/// - Navigates to LoginScreen if user is not authenticated
+/// - Uses pushReplacementNamed to prevent back navigation to this wrapper
+/// 
+/// The navigation logic is wrapped in addPostFrameCallback to ensure
+/// the widget tree is fully built before performing navigation.
 class AuthWrapper extends StatelessWidget {
   const AuthWrapper({super.key});
 
@@ -90,7 +132,33 @@ class AuthWrapper extends StatelessWidget {
 }
 
 /// Centralized theme builder for the Arebbus app
+/// 
+/// AppTheme provides a consistent Material Design 3 theme configuration
+/// for the entire application. The theme includes:
+/// 
+/// - Color scheme based on teal as the seed color for brand consistency
+/// - Custom AppBar styling with teal background and white text
+/// - Elevated button theming with teal accent and rounded corners
+/// - Input decoration with focused teal borders and rounded corners
+/// - Card theming with consistent elevation and shadow styling
+/// - Bottom navigation bar theming with teal accents
+/// - Button theming for legacy widgets with consistent styling
+/// 
+/// All components follow Material 3 design principles while maintaining
+/// the Arebbus brand identity through the consistent use of teal colors.
 class AppTheme {
+  /// Builds and returns the complete theme configuration for the app.
+  /// 
+  /// Creates a comprehensive ThemeData object that defines the visual
+  /// appearance of all UI components throughout the application.
+  /// The theme uses teal as the primary color and includes:
+  /// 
+  /// - Material 3 design system with teal color scheme
+  /// - Roboto font family for consistent typography
+  /// - Custom component themes for AppBar, buttons, inputs, and cards
+  /// - Adaptive platform density for optimal display across devices
+  /// 
+  /// @return ThemeData configured with Arebbus branding and Material 3 styling
   static ThemeData buildTheme() {
     final Color seedColor = Colors.teal;
 

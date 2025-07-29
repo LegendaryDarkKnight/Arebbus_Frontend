@@ -2,11 +2,44 @@ import 'package:arebbus/models/comment.dart'; // Adjust import path
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
+/// Widget for displaying individual comments in the social feed.
+/// 
+/// CommentCard is a reusable widget that renders a single comment with:
+/// - Author information (name and avatar)
+/// - Comment content with proper text formatting
+/// - Timestamp with relative time display
+/// - Upvote functionality and count display
+/// - Consistent styling with the app theme
+/// 
+/// The widget handles:
+/// - Author avatar loading with fallback to default image
+/// - Long content text with proper wrapping
+/// - Timestamp formatting for readability
+/// - Interactive upvote button with visual feedback
+/// - Responsive layout that adapts to different screen sizes
 class CommentCard extends StatelessWidget {
+  /// The comment data to display
   final Comment comment;
 
+  /// Creates a CommentCard widget.
+  /// 
+  /// @param comment The Comment object containing all comment data
   const CommentCard({super.key, required this.comment});
 
+  /// Formats a timestamp into a human-readable relative time string.
+  /// 
+  /// Converts DateTime objects into user-friendly time representations
+  /// similar to social media platforms:
+  /// - Very recent: "just now"
+  /// - Seconds: "30s ago"
+  /// - Minutes: "5m ago"
+  /// - Hours: "2h ago"
+  /// - Yesterday: "Yesterday at 3:45 PM"
+  /// - Days: "3d ago"
+  /// - Older: "Mar 15, 2024"
+  /// 
+  /// @param timestamp The DateTime to format
+  /// @return Human-readable relative time string
   String _formatTimestamp(DateTime timestamp) {
     final now = DateTime.now();
     final difference = now.difference(timestamp);
