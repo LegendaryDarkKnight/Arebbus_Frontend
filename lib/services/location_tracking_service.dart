@@ -4,20 +4,57 @@ import 'package:geolocator/geolocator.dart';
 import 'package:arebbus/service/api_service.dart';
 import 'package:arebbus/models/user_location.dart';
 
+/// Background location tracking service for the Arebbus application.
+/// 
+/// This service manages continuous location tracking for users when they are
+/// actively using bus transportation services. It provides:
+/// 
+/// - Background location monitoring and updates
+/// - Periodic location data transmission to the backend
+/// - User status-based tracking (only when WAITING or ON_BUS)
+/// - Real-time position streaming for immediate updates
+/// - Automatic location permission handling
+/// - Battery-optimized tracking intervals
+/// - Integration with the API service for location data persistence
+/// 
+/// The service uses a singleton pattern to ensure consistent location tracking
+/// across the application and manages both timer-based periodic updates and
+/// continuous location streaming for optimal user experience.
 class LocationTrackingService {
+  /// Singleton instance of the LocationTrackingService
   static final LocationTrackingService _instance = LocationTrackingService._internal();
+  
+  /// Getter for accessing the singleton instance
   static LocationTrackingService get instance => _instance;
   
+  /// Private constructor for singleton pattern implementation
   LocationTrackingService._internal();
 
+  /// API service instance for sending location data to backend
   final ApiService _apiService = ApiService.instance;
+  
+  /// Timer for periodic location updates (every 5 minutes)
   Timer? _locationTimer;
+  
+  /// Stream subscription for continuous location monitoring
   StreamSubscription<Position>? _positionStreamSubscription;
+  
+  /// Current user location status information
   UserLocation? _currentUserStatus;
+  
+  /// Flag indicating whether location tracking is currently active
   bool _isTracking = false;
 
-  /// Start tracking user location every minute
-  /// Only tracks when user is in WAITING or ON_BUS status
+  /// Starts location tracking with periodic updates and continuous monitoring.
+  /// 
+  /// This method initiates background location tracking by:
+  /// - Checking and updating current user status from the server
+  /// - Setting up periodic location updates every 5 minutes
+  /// - Starting continuous location stream for immediate updates
+  /// - Only tracking when user status is WAITING or ON_BUS for battery optimization
+  /// 
+  /// The service prevents duplicate tracking sessions and handles location
+  /// permissions automatically.
   Future<void> startTracking() async {
     if (_isTracking) return;
     
@@ -36,7 +73,16 @@ class LocationTrackingService {
     await _startLocationStream();
   }
 
-  /// Stop location tracking
+  /// Stops all location tracking activities and cleans up resources.
+  /// 
+  /// This method safely stops location tracking by:
+  /// - Cancelling the periodic location update timer
+  /// - Stopping the continuous location stream subscription
+  /// - Cleaning up all tracking-related resources
+  /// - Setting tracking state to inactive
+  /// 
+  /// Should be called when the user logs out, disables location sharing,
+  /// or when the app is being terminated.
   void stopTracking() {
     debugPrint('Stopping location tracking service');
     _isTracking = false;
@@ -46,7 +92,14 @@ class LocationTrackingService {
     _positionStreamSubscription = null;
   }
 
-  /// Update user status from server
+  /// Updates user status from the server to determine tracking eligibility.
+  /// 
+  /// This method fetches the current user location status from the backend
+  /// to determine if location tracking should continue. Only users with
+  /// WAITING or ON_BUS status have their locations tracked to optimize
+  /// battery usage and respect user privacy.
+  /// 
+  /// Handles API errors gracefully and logs debugging information.
   Future<void> _updateUserStatus() async {
     try {
       _currentUserStatus = await _apiService.getUserLocation();

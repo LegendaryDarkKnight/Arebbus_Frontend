@@ -15,19 +15,54 @@ import 'package:arebbus/models/waiting_users_count.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 
+/// Centralized API service for all HTTP communications in the Arebbus application.
+/// 
+/// This service acts as the primary interface between the Flutter application and
+/// the backend API. It provides a singleton pattern for consistent API access
+/// across the app and handles:
+/// 
+/// - HTTP request/response management using Dio
+/// - Authentication token management and automatic injection
+/// - Request/response interceptors for logging and error handling
+/// - Token refresh and automatic retry mechanisms
+/// - Secure storage of authentication data
+/// - Standardized error handling and response parsing
+/// - Support for various API endpoints including buses, routes, posts, and location services
+/// 
+/// The service automatically handles authorization headers, request logging,
+/// and provides comprehensive error handling for network operations.
 class ApiService {
+  /// Singleton instance of the ApiService
   static final ApiService _instance = ApiService._internal();
+  
+  /// Dio HTTP client instance for making API requests
   late Dio _dio;
+  
+  /// Base URL for the API endpoints, loaded from app configuration
   static final String _baseUrl = AppConfig.instance.apiBaseUrl;
+  
+  /// SharedPreferences key for storing authentication tokens
   static const String _tokenKey = 'auth_token';
+  
+  /// SharedPreferences key for storing user data
   static const String _userDataKey = 'user_data';
 
+  /// Private constructor for singleton pattern implementation
   ApiService._internal() {
     _initializeDio();
   }
 
+  /// Getter for accessing the singleton instance of ApiService
   static ApiService get instance => _instance;
 
+  /// Enables HTTP request/response interceptors for debugging and authentication.
+  /// 
+  /// This method sets up interceptors that:
+  /// - Automatically add Authorization headers to requests
+  /// - Log request details for debugging purposes
+  /// - Log response data and status codes
+  /// - Handle and log error responses
+  /// - Manage token refresh and retry logic for expired tokens
   void _enableInterceptors() {
     _dio.interceptors.add(
       InterceptorsWrapper(

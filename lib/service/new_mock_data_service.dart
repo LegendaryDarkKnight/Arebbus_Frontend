@@ -6,9 +6,26 @@ import 'package:arebbus/models/tag.dart';
 import 'package:arebbus/models/user.dart';
 import 'package:arebbus/models/addon.dart';
 
+/// Mock data service for providing test data during development and testing.
+/// 
+/// This service generates realistic mock data for various entities in the
+/// Arebbus application, including users, posts, comments, addons, and tags.
+/// It's primarily used for:
+/// 
+/// - Development and testing without requiring backend connectivity
+/// - UI prototyping and design validation
+/// - Feature demonstration and user testing
+/// - Offline functionality testing
+/// - Performance testing with consistent data sets
+/// 
+/// The service provides static methods that return pre-configured mock objects
+/// with realistic data, relationships, and metadata that simulate real-world
+/// usage scenarios in the transportation social network.
 class NewMockDataService {
+  /// Placeholder image URL for mock data objects
   static final String placeHolder = 'https://picsum.photos/200';
 
+  /// Mock current user object for testing authentication and user features
   static final User currentUser = User(
     name: 'Imtiaz',
     email: 'imtiaz@buet.ac.bd',
@@ -17,6 +34,14 @@ class NewMockDataService {
     valid: true,
   );
 
+  /// Generates a list of mock addon objects for testing addon functionality.
+  /// 
+  /// This method creates a diverse set of addon objects representing different
+  /// categories (stops, routes, buses) with varying popularity, ratings, and
+  /// installation status. The mock data includes realistic metadata such as
+  /// creation dates, update times, and user engagement metrics.
+  /// 
+  /// Returns: A list of mock Addon objects with complete test data
   static List<Addon> getMockAddons() {
     return [
       Addon(
@@ -154,6 +179,21 @@ class NewMockDataService {
     ];
   }
 
+  /// Generates a list of mock post objects for testing social feed functionality.
+  /// 
+  /// This method creates realistic social media posts that would appear in the
+  /// transportation community feed. The posts include various content types such as:
+  /// - Traffic and congestion reports
+  /// - Bus delay notifications and updates
+  /// - New bus information and route changes
+  /// - Accident reports and service alerts
+  /// - Community discussions and questions
+  /// 
+  /// Each post includes complete metadata including tags, timestamps, user
+  /// engagement metrics (upvotes), and associated comments to simulate
+  /// real social interaction patterns.
+  /// 
+  /// Returns: A list of mock Post objects with realistic transportation-related content
   static List<Post> getMockPosts() {
     final tags = [
       Tag(id: 1, name: 'Congestion'),
